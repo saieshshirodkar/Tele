@@ -23,10 +23,26 @@ jobs:
           java-version: "17"
           cache: "gradle"
 
-      - name: Build release APK
+      - name: Decode Keystore
+        run: |
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
+
+      - name: Create local.properties for signing
+        run: |
+          echo "RELEASE_STORE_FILE=release.keystore" > local.properties
+          echo "RELEASE_STORE_PASSWORD=${{ secrets.RELEASE_STORE_PASSWORD }}" >> local.properties
+          echo "RELEASE_KEY_ALIAS=tele" >> local.properties
+          echo "RELEASE_KEY_PASSWORD=${{ secrets.RELEASE_KEY_PASSWORD }}" >> local.properties
+
+      - name: Build signed release APK
         run: ./gradlew assembleRelease
+
+      - name: Rename APK with version
+        run: |
+          VERSION=$(echo ${{ github.ref_name }} | sed 's/^v//')
+          mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/Tele-${VERSION}.apk
 
       - name: Upload release APK
         uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/apk/release/*.apk
+          files: app/build/outputs/apk/release/Tele-*.apk
