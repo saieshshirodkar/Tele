@@ -31,12 +31,16 @@ import com.saiesh.tele.presentation.media.vm.MediaViewModel
 import com.saiesh.tele.presentation.search.vm.SearchViewModel
 import kotlinx.coroutines.launch
 
-class BrowseFragment : BrowseSupportFragment() {
+class BrowseFragment : BrowseSupportFragment(),
+    MediaContextMenuDialogFragment.Listener,
+    ConfirmDeleteDialogFragment.Listener {
     private val mediaViewModel: MediaViewModel by viewModels()
     private val searchViewModel: SearchViewModel by activityViewModels()
 
     private val rowsAdapter = ArrayObjectAdapter(ListRowPresenter())
-    private val mediaAdapter = ArrayObjectAdapter(MediaCardPresenter())
+    private val mediaAdapter = ArrayObjectAdapter(MediaCardPresenter { item ->
+        showContextMenu(item)
+    })
     private val chatAdapter = ArrayObjectAdapter(VideoChatPresenter())
     private val mediaHeader = HeaderItem(0, "Videos")
     private val chatHeader = HeaderItem(1, "Chats")
@@ -216,5 +220,46 @@ class BrowseFragment : BrowseSupportFragment() {
             }
             Handler(Looper.getMainLooper()).post { launch() }
         }
+    }
+
+    private fun showContextMenu(item: MediaItem) {
+        if (childFragmentManager.findFragmentByTag(TAG_CONTEXT_MENU) != null) return
+        MediaContextMenuDialogFragment
+            .newInstance(item)
+            .show(childFragmentManager, TAG_CONTEXT_MENU)
+    }
+
+    override fun onContextPlay(item: MediaItem) {
+        handleMediaClick(item)
+    }
+
+    override fun onContextDetails(item: MediaItem) {
+        if (childFragmentManager.findFragmentByTag(TAG_DETAILS) != null) return
+        MediaDetailsDialogFragment
+            .newInstance(item)
+            .show(childFragmentManager, TAG_DETAILS)
+    }
+
+    override fun onContextDelete(item: MediaItem) {
+        if (childFragmentManager.findFragmentByTag(TAG_CONFIRM_DELETE) != null) return
+        ConfirmDeleteDialogFragment
+            .newInstance(item)
+            .show(childFragmentManager, TAG_CONFIRM_DELETE)
+    }
+
+    override fun onConfirmDelete(item: MediaItem) {
+        mediaViewModel.deleteMediaItem(item) { error ->
+            if (error != null) {
+                Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(requireContext(), "Deleted", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    companion object {
+        private const val TAG_CONTEXT_MENU = "media_context_menu"
+        private const val TAG_CONFIRM_DELETE = "media_confirm_delete"
+        private const val TAG_DETAILS = "media_details"
     }
 }

@@ -57,4 +57,7 @@ class SavedMessagesRepository {
 
     fun requestFastLink(item: MediaItem, onResult: (String?, String?) -> Unit) =
         requestFastLinkInternal(item, onResult)
+
+    fun deleteMessage(chatId: Long, messageId: Long, onResult: (String?) -> Unit) =
+        deleteMessageInternal(chatId, messageId, onResult)
 }

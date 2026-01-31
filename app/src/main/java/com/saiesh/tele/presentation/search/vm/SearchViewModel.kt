@@ -21,29 +21,69 @@ class SearchViewModel(
     }
 
     fun closeOverlay() {
-        _uiState.update { it.copy(isOverlayVisible = false, error = null, results = emptyList(), query = "") }
+        _uiState.update {
+            it.copy(
+                isOverlayVisible = false,
+                error = null,
+                results = emptyList(),
+                query = "",
+                hasSearched = false,
+                focusFirstResult = false
+            )
+        }
     }
 
     fun updateQuery(query: String) {
-        _uiState.update { it.copy(query = query) }
+        _uiState.update { it.copy(query = query, error = null) }
     }
 
     fun performSearch(query: String) {
-        if (query.isBlank()) {
-            _uiState.update { it.copy(error = "Enter a search term") }
+        val trimmed = query.trim()
+        if (trimmed.length < 2) {
+            _uiState.update {
+                it.copy(
+                    isSearching = false,
+                    error = "Enter at least 2 characters",
+                    hasSearched = true,
+                    results = emptyList()
+                )
+            }
             return
         }
-        _uiState.update { it.copy(isSearching = true, error = null, results = emptyList(), query = query) }
-        repository.searchProBot(query) { response ->
+        _uiState.update {
+            it.copy(
+                isSearching = true,
+                error = null,
+                results = emptyList(),
+                query = trimmed,
+                hasSearched = true
+            )
+        }
+        repository.searchProBot(trimmed) { response ->
             handleSearchResponse(response)
         }
     }
 
     fun selectResult(result: SearchQueryResult) {
-        _uiState.update { it.copy(isSearching = true, error = null) }
+        if (_uiState.value.isSearching) return
+        _uiState.update {
+            it.copy(
+                isSearching = true,
+                error = null,
+                focusFirstResult = result.isPagination
+            )
+        }
         repository.submitProBotSelection(result) { response ->
             handleSearchResponse(response)
         }
+    }
+
+    fun consumeFocusFirstResult(): Boolean {
+        val shouldFocus = _uiState.value.focusFirstResult
+        if (shouldFocus) {
+            _uiState.update { it.copy(focusFirstResult = false) }
+        }
+        return shouldFocus
     }
 
     fun consumeRefreshMedia(): Boolean {
@@ -61,11 +101,18 @@ class SearchViewModel(
                     result.title.contains("srt", ignoreCase = true)
                 }
                 _uiState.update { current ->
-                    current.copy(isSearching = false, results = filteredResults, error = null)
+                    current.copy(
+                        isSearching = false,
+                        results = filteredResults,
+                        error = null,
+                        hasSearched = true
+                    )
                 }
             }
             is SearchBotResponse.Error -> {
-                _uiState.update { current -> current.copy(isSearching = false, error = response.message) }
+                _uiState.update {
+                    current -> current.copy(isSearching = false, error = response.message, hasSearched = true)
+                }
             }
             is SearchBotResponse.Media -> saveToSavedMessages(response.item)
         }
@@ -82,6 +129,9 @@ class SearchViewModel(
                         isSearching = false,
                         isOverlayVisible = false,
                         results = emptyList(),
+                        query = "",
+                        hasSearched = false,
+                        focusFirstResult = false,
                         refreshMedia = true
                     )
                 }

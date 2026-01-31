@@ -16,7 +16,9 @@ data class SearchUiState(
     val results: List<SearchQueryResult> = emptyList(),
     val error: String? = null,
     val isOverlayVisible: Boolean = false,
-    val refreshMedia: Boolean = false
+    val refreshMedia: Boolean = false,
+    val hasSearched: Boolean = false,
+    val focusFirstResult: Boolean = false
 )
 
 sealed class SearchBotResponse {

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <View
+        android:id="@+id/confirm_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#99000000" />
+
+    <LinearLayout
+        android:layout_width="320dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|center_vertical"
+        android:background="@drawable/context_menu_background"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:id="@+id/confirm_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="@android:style/TextAppearance.Medium"
+            android:textColor="@android:color/white" />
+
+        <TextView
+            android:id="@+id/confirm_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="@android:color/white" />
+
+        <TextView
+            android:id="@+id/confirm_delete"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/confirm_delete_background"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:padding="14dp"
+            android:text="@string/context_confirm"
+            android:textColor="@android:color/white" />
+
+        <TextView
+            android:id="@+id/confirm_cancel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/context_menu_item_background"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:padding="14dp"
+            android:text="@string/context_cancel"
+            android:textColor="@color/context_menu_item_text" />
+    </LinearLayout>
+</FrameLayout>

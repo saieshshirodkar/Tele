@@ -5,4 +5,6 @@
     <color name="search_opaque">#ffaa3f</color>
     <color name="selected_background">#ffaa3f</color>
     <color name="default_background">#3d3d3d</color>
+    <color name="destructive_red">#E53935</color>
+    <color name="destructive_red_dark">#C62828</color>
 </resources>

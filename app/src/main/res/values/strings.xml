@@ -14,4 +14,11 @@
     <string name="close_action">Close</string>
     <string name="search_hint">Search movies...</string>
     <string name="search_empty">No results yet</string>
+    <string name="context_play_now">Play now</string>
+    <string name="context_details">Details</string>
+    <string name="context_delete">Delete</string>
+    <string name="context_confirm">Confirm delete</string>
+    <string name="context_cancel">Cancel</string>
+    <string name="context_delete_title">Delete from chat</string>
+    <string name="context_delete_message">Delete “%1$s” from chat?\nThis also removes it from Saved Messages.</string>
 </resources>

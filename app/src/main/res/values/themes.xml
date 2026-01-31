@@ -1,4 +1,11 @@
 <resources>
 
     <style name="Theme.Tele" parent="@style/Theme.Leanback" />
+
+    <style name="Theme.Tele.ContextMenu" parent="@style/Theme.Leanback">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">false</item>
+    </style>
 </resources>

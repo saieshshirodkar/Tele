@@ -11,7 +11,9 @@ import com.saiesh.tele.data.cache.image.ImageCache
 import com.saiesh.tele.domain.model.media.MediaItem
 import com.saiesh.tele.domain.model.media.MediaType
 
-class MediaCardPresenter : Presenter() {
+class MediaCardPresenter(
+    private val onLongPress: (MediaItem) -> Unit
+) : Presenter() {
     override fun onCreateViewHolder(parent: ViewGroup): Presenter.ViewHolder {
         val context = parent.context
         val cardView = ImageCardView(context).apply {
@@ -35,6 +37,10 @@ class MediaCardPresenter : Presenter() {
     override fun onBindViewHolder(viewHolder: Presenter.ViewHolder, item: Any?) {
         val media = item as? MediaItem ?: return
         val cardView = viewHolder.view as ImageCardView
+        cardView.setOnLongClickListener {
+            onLongPress(media)
+            true
+        }
         cardView.titleText = media.title
         cardView.contentText = if (media.type == MediaType.Video && media.durationSeconds > 0) {
             formatDuration(media.durationSeconds)

@@ -1,5 +1,7 @@
 package com.saiesh.tele.domain.model.media
 
+import java.io.Serializable
+
 enum class MediaType {
     Photo,
     Video
@@ -19,4 +21,4 @@ data class MediaItem(
     val thumbnailHeight: Int = 0,
     val durationSeconds: Int = 0,
     val fileSizeBytes: Long = 0
-)
+) : Serializable

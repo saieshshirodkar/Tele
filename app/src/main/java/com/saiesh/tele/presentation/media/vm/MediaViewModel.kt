@@ -171,6 +171,21 @@ class MediaViewModel(
         repository.requestFastLink(item, onResult)
     }
 
+    fun deleteMediaItem(item: MediaItem, onResult: (String?) -> Unit) {
+        _uiState.update { it.copy(error = null) }
+        repository.deleteMessage(item.chatId, item.messageId) { error ->
+            if (error != null) {
+                _uiState.update { current -> current.copy(error = error) }
+                onResult(error)
+            } else {
+                _uiState.update { current ->
+                    current.copy(items = current.items.filterNot { it.messageId == item.messageId })
+                }
+                onResult(null)
+            }
+        }
+    }
+
     fun onItemFocused(item: MediaItem) {
         val fileId = item.thumbnailFileId
         if (fileId != null && item.thumbnailPath.isNullOrBlank()) {

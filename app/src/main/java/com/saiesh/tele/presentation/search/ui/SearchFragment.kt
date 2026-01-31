@@ -1,8 +1,10 @@
 package com.saiesh.tele.presentation.search.ui
 
+import android.content.Context
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -27,8 +29,6 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val queryInput = view.findViewById<EditText>(R.id.search_query)
-        val searchButton = view.findViewById<Button>(R.id.search_button)
-        val closeButton = view.findViewById<Button>(R.id.search_close)
         val progress = view.findViewById<ProgressBar>(R.id.search_progress)
         val message = view.findViewById<TextView>(R.id.search_message)
         val results = view.findViewById<RecyclerView>(R.id.search_results)
@@ -39,17 +39,31 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
         results.layoutManager = LinearLayoutManager(requireContext())
         results.adapter = adapter
 
-        queryInput.addTextChangedListener { viewModel.updateQuery(it?.toString().orEmpty()) }
-        searchButton.setOnClickListener { viewModel.performSearch(queryInput.text.toString()) }
-        closeButton.setOnClickListener { (activity as? MainActivity)?.showBrowse() }
+        queryInput.post {
+            queryInput.requestFocus()
+            val inputManager = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            inputManager.showSoftInput(queryInput, InputMethodManager.SHOW_IMPLICIT)
+        }
 
+        queryInput.addTextChangedListener { viewModel.updateQuery(it?.toString().orEmpty()) }
+        queryInput.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                viewModel.performSearch(queryInput.text.toString())
+                val inputManager = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                inputManager.hideSoftInputFromWindow(queryInput.windowToken, 0)
+                true
+            } else {
+                false
+            }
+        }
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
                     progress.isVisible = state.isSearching
+                    val hasQuery = state.query.isNotBlank()
                     val errorText = when {
-                        state.error != null -> state.error
-                        state.results.isEmpty() && !state.isSearching -> getString(R.string.search_empty)
+                        state.error != null && state.hasSearched -> state.error
+                        state.hasSearched && hasQuery && state.results.isEmpty() && !state.isSearching -> getString(R.string.search_empty)
                         else -> null
                     }
                     message.text = errorText.orEmpty()
@@ -57,7 +71,19 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
                     if (queryInput.text.toString() != state.query) {
                         queryInput.setText(state.query)
                     }
-                    adapter.submit(state.results)
+                    adapter.submit(if (state.hasSearched) state.results else emptyList())
+                    if (!state.isSearching && state.results.isNotEmpty() && viewModel.consumeFocusFirstResult()) {
+                        results.post {
+                            results.scrollToPosition(0)
+                            results.post {
+                                results.findViewHolderForAdapterPosition(0)?.itemView?.requestFocus()
+                                    ?: results.getChildAt(0)?.requestFocus()
+                            }
+                        }
+                    }
+                    if (viewModel.consumeRefreshMedia()) {
+                        (activity as? MainActivity)?.showBrowse()
+                    }
                 }
             }
         }
