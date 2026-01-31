@@ -23,6 +23,7 @@ local.properties
 *.keystore
 *.p12
 *.pem
+release.keystore.b64
 
 # Secrets & configs
 **/google-services.json
@@ -40,6 +41,7 @@ local.properties
 # Kotlin/Java artifacts
 *.class
 *.jar
+!gradle/wrapper/gradle-wrapper.jar
 *.war
 *.ear
 *.apk
