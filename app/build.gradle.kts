@@ -83,7 +83,8 @@ android {
     androidComponents {
         onVariants(selector().all()) { variant ->
             variant.outputs.forEach { output ->
-                output.outputFileName.set("Tele-${'$'}{variant.versionName}.apk")
+                val apkOutput = output as? com.android.build.api.variant.ApkVariantOutput
+                apkOutput?.outputFileName?.set("Tele-${'$'}{variant.versionName}.apk")
             }
         }
     }
