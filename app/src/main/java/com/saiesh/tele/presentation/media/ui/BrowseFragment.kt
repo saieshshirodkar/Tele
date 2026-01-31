@@ -7,6 +7,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -71,6 +72,7 @@ class BrowseFragment : BrowseSupportFragment(),
         title = getString(R.string.app_name)
         headersState = HEADERS_ENABLED
         isHeadersTransitionOnBackEnabled = true
+        searchAffordanceColor = ContextCompat.getColor(requireContext(), R.color.selected_background)
         setOnSearchClickedListener {
             (activity as? MainActivity)?.showSearch()
         }

@@ -22,8 +22,6 @@
             android:id="@+id/context_menu_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="2"
             android:textAppearance="@android:style/TextAppearance.Medium"
             android:textColor="@android:color/white" />
 
