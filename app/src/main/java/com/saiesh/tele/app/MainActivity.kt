@@ -71,15 +71,24 @@ class MainActivity : FragmentActivity() {
             this,
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    if (waitingForExit) {
-                        finish()
-                        return
+                    val fragment = supportFragmentManager.findFragmentById(R.id.main_browse_fragment)
+                    if (fragment is com.saiesh.tele.presentation.media.ui.BrowseFragment) {
+                        if (fragment.isShowingHeaders()) {
+                            if (waitingForExit) {
+                                finish()
+                                return
+                            }
+                            waitingForExit = true
+                            Toast.makeText(this@MainActivity, "Press back again to exit", Toast.LENGTH_SHORT)
+                                .show()
+                            handler.removeCallbacksAndMessages(null)
+                            handler.postDelayed({ waitingForExit = false }, 2000)
+                            return
+                        }
                     }
-                    waitingForExit = true
-                    Toast.makeText(this@MainActivity, "Press back again to exit", Toast.LENGTH_SHORT)
-                        .show()
-                    handler.removeCallbacksAndMessages(null)
-                    handler.postDelayed({ waitingForExit = false }, 2000)
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                    isEnabled = true
                 }
             }
         )

@@ -102,9 +102,7 @@ class MediaViewModel(
 
     private fun handleLoadMore(items: List<MediaItem>, nextFromMessageId: Long, error: String?) {
         _uiState.update { current ->
-            val merged = (current.items + items)
-                .distinctBy { it.messageId }
-                .sortedByDescending { it.date }
+            val merged = (current.items + items).distinctBy { it.messageId }
             current.copy(
                 items = merged,
                 isLoadingMore = false,

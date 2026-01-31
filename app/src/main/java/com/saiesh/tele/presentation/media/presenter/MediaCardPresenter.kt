@@ -37,7 +37,7 @@ class MediaCardPresenter : Presenter() {
         val cardView = viewHolder.view as ImageCardView
         cardView.titleText = media.title
         cardView.contentText = if (media.type == MediaType.Video && media.durationSeconds > 0) {
-            "${media.durationSeconds / 60} min"
+            formatDuration(media.durationSeconds)
         } else {
             ""
         }
@@ -67,5 +67,12 @@ class MediaCardPresenter : Presenter() {
             Glide.with(cardView).clear(imageView)
         }
         cardView.mainImage = null
+    }
+
+    private fun formatDuration(totalSeconds: Int): String {
+        val hours = totalSeconds / 3600
+        val minutes = (totalSeconds % 3600) / 60
+        val seconds = totalSeconds % 60
+        return String.format("%02dh%02dm%02ds", hours, minutes, seconds)
     }
 }

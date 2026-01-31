@@ -14,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.leanback.app.BrowseSupportFragment
 import androidx.leanback.widget.ArrayObjectAdapter
+import androidx.leanback.widget.DiffCallback
 import androidx.leanback.widget.HeaderItem
 import androidx.leanback.widget.ListRow
 import androidx.leanback.widget.ListRowPresenter
@@ -39,6 +40,27 @@ class BrowseFragment : BrowseSupportFragment() {
     private val chatAdapter = ArrayObjectAdapter(VideoChatPresenter())
     private val mediaHeader = HeaderItem(0, "Videos")
     private val chatHeader = HeaderItem(1, "Chats")
+    private var mediaRowViewHolder: ListRowPresenter.ViewHolder? = null
+    private var pendingFocusFirstItem = false
+    private var lastChatKey: Long? = null
+    private val mediaDiff = object : DiffCallback<MediaItem>() {
+        override fun areItemsTheSame(oldItem: MediaItem, newItem: MediaItem): Boolean {
+            return oldItem.messageId == newItem.messageId
+        }
+
+        override fun areContentsTheSame(oldItem: MediaItem, newItem: MediaItem): Boolean {
+            return oldItem == newItem
+        }
+    }
+    private val chatDiff = object : DiffCallback<VideoChatItem>() {
+        override fun areItemsTheSame(oldItem: VideoChatItem, newItem: VideoChatItem): Boolean {
+            return oldItem.chatId == newItem.chatId
+        }
+
+        override fun areContentsTheSame(oldItem: VideoChatItem, newItem: VideoChatItem): Boolean {
+            return oldItem == newItem
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,10 +96,13 @@ class BrowseFragment : BrowseSupportFragment() {
         }
 
         onItemViewSelectedListener = OnItemViewSelectedListener { _, item, rowViewHolder, _ ->
+            val listRowViewHolder = rowViewHolder as? ListRowPresenter.ViewHolder
+            val listRow = listRowViewHolder?.row as? ListRow
+            if (listRow?.adapter == mediaAdapter) {
+                mediaRowViewHolder = listRowViewHolder
+            }
             if (item is MediaItem) {
                 mediaViewModel.onItemFocused(item)
-                val listRowViewHolder = rowViewHolder as? ListRowPresenter.ViewHolder
-                val listRow = listRowViewHolder?.row as? ListRow
                 if (listRow?.adapter == mediaAdapter) {
                     val position = listRowViewHolder.gridView?.selectedPosition ?: 0
                     if (position >= mediaAdapter.size() - 4) {
@@ -93,6 +118,11 @@ class BrowseFragment : BrowseSupportFragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     mediaViewModel.uiState.collect { state ->
+                        val chatKey = if (state.isSavedMessagesSelected) -1L else state.selectedChatId ?: -1L
+                        if (lastChatKey != chatKey) {
+                            lastChatKey = chatKey
+                            pendingFocusFirstItem = true
+                        }
                         title = state.selectedChatTitle
                         updateMediaItems(state.items)
                         updateChatItems(state.videoChats)
@@ -117,19 +147,26 @@ class BrowseFragment : BrowseSupportFragment() {
     }
 
     private fun updateMediaItems(items: List<MediaItem>) {
-        mediaAdapter.clear()
-        mediaAdapter.addAll(0, items)
+        mediaAdapter.setItems(items, mediaDiff)
+        if (pendingFocusFirstItem) {
+            pendingFocusFirstItem = false
+            mediaRowViewHolder?.gridView?.post {
+                mediaRowViewHolder?.gridView?.setSelectedPosition(0)
+                mediaRowViewHolder?.gridView?.requestFocus()
+            }
+        }
     }
 
     private fun updateChatItems(chats: List<VideoChatItem>) {
-        chatAdapter.clear()
-        chatAdapter.addAll(0, chats)
+        chatAdapter.setItems(chats, chatDiff)
     }
 
     private fun handleChatClick(chat: VideoChatItem) {
         if (chat.isSavedMessages) {
+            pendingFocusFirstItem = true
             mediaViewModel.load()
         } else {
+            pendingFocusFirstItem = true
             mediaViewModel.loadChat(chat.chatId, chat.title)
         }
     }
