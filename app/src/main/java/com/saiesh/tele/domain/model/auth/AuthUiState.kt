@@ -2,6 +2,7 @@ package com.saiesh.tele.domain.model.auth
 
 enum class AuthStep {
     Loading,
+    EnterApiKeys,
     EnterPhone,
     EnterCode,
     EnterPassword,
@@ -9,6 +10,8 @@ enum class AuthStep {
 }
 
 data class AuthUiState(
+    val apiId: String = "",
+    val apiHash: String = "",
     val phone: String = "",
     val code: String = "",
     val password: String = "",

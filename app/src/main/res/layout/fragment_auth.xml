@@ -32,6 +32,34 @@
         android:visibility="gone" />
 
     <EditText
+        android:id="@+id/auth_api_id_input"
+        android:layout_width="360dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/input_background"
+        android:hint="@string/auth_api_id_hint"
+        android:inputType="number"
+        android:imeOptions="actionDone"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:padding="12dp"
+        android:visibility="gone" />
+
+    <EditText
+        android:id="@+id/auth_api_hash_input"
+        android:layout_width="360dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/input_background"
+        android:hint="@string/auth_api_hash_hint"
+        android:inputType="text"
+        android:imeOptions="actionDone"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:padding="12dp"
+        android:visibility="gone" />
+
+    <EditText
         android:id="@+id/auth_phone_input"
         android:layout_width="360dp"
         android:layout_height="wrap_content"

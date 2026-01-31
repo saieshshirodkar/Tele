@@ -21,6 +21,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 _uiState.update { current ->
                     current.copy(
                         step = state.step,
+                        apiId = state.apiId,
+                        apiHash = state.apiHash,
                         message = state.message,
                         isLoading = state.isLoading
                     )
@@ -31,6 +33,14 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onPhoneChange(value: String) {
         _uiState.update { it.copy(phone = value, message = null) }
+    }
+
+    fun onApiIdChange(value: String) {
+        _uiState.update { it.copy(apiId = value, message = null) }
+    }
+
+    fun onApiHashChange(value: String) {
+        _uiState.update { it.copy(apiHash = value, message = null) }
     }
 
     fun onCodeChange(value: String) {
@@ -48,6 +58,20 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
         authManager.submitPhone(phone)
+    }
+
+    fun submitApiKeys() {
+        val apiId = _uiState.value.apiId.trim()
+        val apiHash = _uiState.value.apiHash.trim()
+        if (apiId.isBlank() || apiId.toIntOrNull() == null) {
+            _uiState.update { it.copy(message = "Enter a valid API ID") }
+            return
+        }
+        if (apiHash.isBlank()) {
+            _uiState.update { it.copy(message = "Enter a valid API Hash") }
+            return
+        }
+        authManager.submitApiKeys(apiId, apiHash)
     }
 
     fun submitCode() {

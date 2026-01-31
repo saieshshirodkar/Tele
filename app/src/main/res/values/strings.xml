@@ -5,6 +5,10 @@
     <string name="auth_code_hint">Login code</string>
     <string name="auth_password_hint">2FA password</string>
     <string name="auth_submit">Continue</string>
+    <string name="auth_api_id_hint">Telegram API ID</string>
+    <string name="auth_api_hash_hint">Telegram API Hash</string>
+    <string name="auth_api_title">Connect Telegram</string>
+    <string name="auth_submit_api">Save API keys</string>
     <string name="auth_submit_phone">Submit phone</string>
     <string name="auth_submit_code">Submit code</string>
     <string name="auth_submit_password">Submit password</string>

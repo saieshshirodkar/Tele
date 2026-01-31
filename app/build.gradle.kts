@@ -19,12 +19,36 @@ android {
         }
     }
 
+    val releaseStoreFile = properties.getProperty("RELEASE_STORE_FILE")
+        ?: System.getenv("RELEASE_STORE_FILE")
+        ?: ""
+    val releaseStorePassword = properties.getProperty("RELEASE_STORE_PASSWORD")
+        ?: System.getenv("RELEASE_STORE_PASSWORD")
+        ?: ""
+    val releaseKeyAlias = properties.getProperty("RELEASE_KEY_ALIAS")
+        ?: System.getenv("RELEASE_KEY_ALIAS")
+        ?: ""
+    val releaseKeyPassword = properties.getProperty("RELEASE_KEY_PASSWORD")
+        ?: System.getenv("RELEASE_KEY_PASSWORD")
+        ?: ""
+
+    signingConfigs {
+        create("release") {
+            if (releaseStoreFile.isNotBlank()) {
+                storeFile = file(releaseStoreFile)
+            }
+            storePassword = releaseStorePassword
+            keyAlias = releaseKeyAlias
+            keyPassword = releaseKeyPassword
+        }
+    }
+
     defaultConfig {
         applicationId = "com.saiesh.tele"
         minSdk = 23
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "0.0.2"
 
         ndk {
             abiFilters += listOf("armeabi-v7a")
@@ -40,6 +64,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -53,6 +78,14 @@ android {
 
     buildFeatures {
         buildConfig = true
+    }
+
+    androidComponents {
+        onVariants(selector().all()) { variant ->
+            variant.outputs.forEach { output ->
+                output.outputFileName.set("Tele-${'$'}{variant.versionName}.apk")
+            }
+        }
     }
 
 }

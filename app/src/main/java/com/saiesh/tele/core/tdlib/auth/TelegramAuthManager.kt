@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Build
 import com.saiesh.tele.BuildConfig
 import com.saiesh.tele.core.tdlib.client.TdLibClient
+import com.saiesh.tele.data.store.ApiCredentialsStore
 import com.saiesh.tele.domain.model.auth.AuthStep
 import com.saiesh.tele.domain.model.auth.AuthUiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +18,7 @@ class TelegramAuthManager(private val context: Context) {
     val uiState: StateFlow<AuthUiState> = _uiState
 
     private val client = TdLibClient.client
+    private val credentialsStore = ApiCredentialsStore(context)
 
     init {
         TdLibClient.addUpdateHandler(::handleUpdate)
@@ -47,6 +49,17 @@ class TelegramAuthManager(private val context: Context) {
         _uiState.update { it.copy(isLoading = true, message = null) }
         client.send(TdApi.CheckAuthenticationPassword(password)) { result ->
             handleResult(result)
+        }
+    }
+
+    fun submitApiKeys(apiId: String, apiHash: String) {
+        credentialsStore.save(apiId, apiHash)
+        _uiState.update { it.copy(apiId = apiId, apiHash = apiHash, isLoading = true, message = null) }
+        client.send(TdApi.GetAuthorizationState()) { result ->
+            when (result) {
+                is TdApi.AuthorizationState -> handleAuthState(result)
+                else -> handleResult(result)
+            }
         }
     }
 
@@ -99,10 +112,25 @@ class TelegramAuthManager(private val context: Context) {
     }
 
     private fun setTdlibParameters() {
-        val apiId = BuildConfig.TELEGRAM_API_ID.toIntOrNull() ?: 0
-        val apiHash = BuildConfig.TELEGRAM_API_HASH
+        val storedApiId = credentialsStore.getApiId()
+        val storedApiHash = credentialsStore.getApiHash()
+        val buildApiId = BuildConfig.TELEGRAM_API_ID.toIntOrNull() ?: 0
+        val buildApiHash = BuildConfig.TELEGRAM_API_HASH
+        val apiId = when {
+            !storedApiId.isNullOrBlank() -> storedApiId.toIntOrNull() ?: 0
+            else -> buildApiId
+        }
+        val apiHash = if (!storedApiHash.isNullOrBlank()) storedApiHash else buildApiHash
         if (apiId == 0 || apiHash.isBlank()) {
-            _uiState.update { it.copy(message = "Missing Telegram API keys", isLoading = false) }
+            _uiState.update {
+                it.copy(
+                    step = AuthStep.EnterApiKeys,
+                    apiId = storedApiId.orEmpty(),
+                    apiHash = storedApiHash.orEmpty(),
+                    message = "Enter your Telegram API ID and Hash",
+                    isLoading = false
+                )
+            }
             return
         }
         val databaseDir = File(context.filesDir, "tdlib").absolutePath
