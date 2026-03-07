@@ -17,6 +17,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          lfs: true
+
+      - name: Setup Gradle
+        run: |
+          chmod +x ./gradlew
+          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
+            ./gradlew wrapper
+          fi
 
       - name: Set up JDK
         uses: actions/setup-java@v4
