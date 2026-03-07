@@ -15,6 +15,7 @@ class SearchViewModel(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState
+    private var lastSelectedResult: SearchQueryResult? = null
 
     fun openOverlay() {
         _uiState.update { it.copy(isOverlayVisible = true, error = null) }
@@ -73,6 +74,7 @@ class SearchViewModel(
                 focusFirstResult = result.isPagination
             )
         }
+        lastSelectedResult = result
         repository.submitProBotSelection(result) { response ->
             handleSearchResponse(response)
         }
@@ -97,6 +99,18 @@ class SearchViewModel(
     private fun handleSearchResponse(response: SearchBotResponse) {
         when (response) {
             is SearchBotResponse.Results -> {
+                val inviteResult = response.results.find { 
+                    val title = it.title.lowercase()
+                    it.url != null && (title.contains("join") || 
+                                     title.contains("request") ||
+                                     title.contains("channel") ||
+                                     title.contains("admin"))
+                }
+                if (inviteResult?.url != null) {
+                    autoProcessJoin(inviteResult.url)
+                    return
+                }
+
                 val filteredResults = response.results.filterNot { result ->
                     result.title.contains("srt", ignoreCase = true)
                 }
@@ -135,6 +149,17 @@ class SearchViewModel(
                         refreshMedia = true
                     )
                 }
+            }
+        }
+    }
+
+    private fun autoProcessJoin(url: String) {
+        _uiState.update { it.copy(isSearching = true, error = null) }
+        repository.autoProcessInvite(url) { error ->
+            _uiState.update { it.copy(isSearching = false, error = error) }
+            if (error == null) {
+                // Automatically retry the selection that triggered this join
+                lastSelectedResult?.let { selectResult(it) }
             }
         }
     }

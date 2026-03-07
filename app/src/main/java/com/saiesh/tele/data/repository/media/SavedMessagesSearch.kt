@@ -95,7 +95,16 @@ internal fun SavedMessagesRepository.submitProBotSelectionInternal(
     }
     TdLibClient.addUpdateHandler(updateHandler)
 
-    val payload = TdApi.CallbackQueryPayloadData(result.callbackData)
+    val data = result.callbackData
+    if (data == null) {
+        if (completed.compareAndSet(false, true)) {
+            timeoutFuture.cancel(false)
+            TdLibClient.removeUpdateHandler(updateHandler)
+            onResult(SearchBotResponse.Error("Invalid selection"))
+        }
+        return
+    }
+    val payload = TdApi.CallbackQueryPayloadData(data)
     val request = TdApi.GetCallbackQueryAnswer(result.chatId, result.messageId, payload)
     client.send(request) { response ->
         if (response is TdApi.Error && completed.compareAndSet(false, true)) {
@@ -154,6 +163,25 @@ private fun SavedMessagesRepository.resolveProSearchChatInternal(
     }
 }
 
+internal fun SavedMessagesRepository.autoProcessInviteInternal(
+    url: String,
+    onResult: (String?) -> Unit
+) {
+    client.send(TdApi.JoinChatByInviteLink(url)) { result ->
+        when (result) {
+            is TdApi.Chat -> onResult(null)
+            is TdApi.Error -> {
+                if (result.message == "INVITE_REQUEST_SENT" || result.message == "USER_ALREADY_PARTICIPANT") {
+                    onResult(null)
+                } else {
+                    onResult(result.message)
+                }
+            }
+            else -> onResult("Failed to process invite link")
+        }
+    }
+}
+
 private fun SavedMessagesRepository.parseSearchBotMessageInternal(message: TdApi.Message): SearchBotResponse? {
     val replyMarkup = message.replyMarkup as? TdApi.ReplyMarkupInlineKeyboard
     if (replyMarkup != null) {
@@ -185,16 +213,21 @@ private fun SavedMessagesRepository.parseInlineKeyboardInternal(
     val results = mutableListOf<SearchQueryResult>()
     markup.rows?.forEach { row ->
         row?.forEach { button ->
-            val data = when (val type = button.type) {
-                is TdApi.InlineKeyboardButtonTypeCallback -> type.data
-                is TdApi.InlineKeyboardButtonTypeCallbackWithPassword -> type.data
-                else -> null
+            var callbackData: ByteArray? = null
+            var url: String? = null
+            
+            when (val type = button.type) {
+                is TdApi.InlineKeyboardButtonTypeCallback -> callbackData = type.data
+                is TdApi.InlineKeyboardButtonTypeCallbackWithPassword -> callbackData = type.data
+                is TdApi.InlineKeyboardButtonTypeUrl -> url = type.url
             }
-            if (data != null) {
+
+            if (callbackData != null || url != null) {
                 results.add(
                     SearchQueryResult(
                         title = button.text,
-                        callbackData = data,
+                        callbackData = callbackData,
+                        url = url,
                         chatId = chatId,
                         messageId = messageId,
                         isPagination = isPaginationButtonInternal(button.text)

@@ -4,7 +4,8 @@ import com.saiesh.tele.domain.model.media.MediaItem
 
 data class SearchQueryResult(
     val title: String,
-    val callbackData: ByteArray,
+    val callbackData: ByteArray? = null,
+    val url: String? = null,
     val chatId: Long,
     val messageId: Long,
     val isPagination: Boolean = false

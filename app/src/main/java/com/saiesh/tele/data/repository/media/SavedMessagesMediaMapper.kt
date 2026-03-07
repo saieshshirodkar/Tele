@@ -90,6 +90,25 @@ internal fun SavedMessagesRepository.mapMessageToMediaInternal(message: TdApi.Me
                 fileSizeBytes = file?.size ?: 0
             )
         }
+        is TdApi.MessagePhoto -> {
+            val photo = content.photo
+            val bestSize = photo.sizes?.maxByOrNull { it.width * it.height }
+            val title = if (content.caption?.text.isNullOrBlank()) "Photo" else content.caption.text
+            MediaItem(
+                chatId = message.chatId,
+                messageId = message.id,
+                date = message.date,
+                type = MediaType.Photo,
+                title = title,
+                fileId = bestSize?.photo?.id,
+                thumbnailFileId = bestSize?.photo?.id,
+                miniThumbnailBytes = photo.minithumbnail?.data,
+                thumbnailWidth = bestSize?.width ?: 0,
+                thumbnailHeight = bestSize?.height ?: 0,
+                durationSeconds = 0,
+                fileSizeBytes = bestSize?.photo?.size?.toLong() ?: 0L
+            )
+        }
         else -> null
     }
 }

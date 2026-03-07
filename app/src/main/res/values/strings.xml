@@ -23,6 +23,6 @@
     <string name="context_delete">Delete</string>
     <string name="context_confirm">Confirm delete</string>
     <string name="context_cancel">Cancel</string>
-    <string name="context_delete_title">Delete from chat</string>
-    <string name="context_delete_message">Delete “%1$s” from chat?\nThis also removes it from Saved Messages.</string>
+    <string name="context_delete_title">Delete from chat?</string>
+    <string name="context_delete_message">Delete \"%1$s\" from chat?</string>
 </resources>

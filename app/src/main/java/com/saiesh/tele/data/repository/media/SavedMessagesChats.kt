@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 internal fun SavedMessagesRepository.loadVideoChatsInternal(
     limit: Int,
+    selectedChatId: Long?,
     onResult: (List<VideoChatItem>, String?) -> Unit
 ) {
     resolveSavedMessagesChatInternal { savedChatId, error ->
@@ -45,10 +46,12 @@ internal fun SavedMessagesRepository.loadVideoChatsInternal(
                     hasVideoInChatInternal(chatId) { hasVideo ->
                         if (hasVideo || chatId == savedChatId) {
                             synchronized(lock) {
+                                val isSelected = if (selectedChatId != null) chatId == selectedChatId else chatId == savedChatId
                                 chatMap[chatId] = VideoChatItem(
                                     chatId = chatId,
                                     title = title,
-                                    isSavedMessages = chatId == savedChatId
+                                    isSavedMessages = chatId == savedChatId,
+                                    isSelected = isSelected
                                 )
                             }
                         }

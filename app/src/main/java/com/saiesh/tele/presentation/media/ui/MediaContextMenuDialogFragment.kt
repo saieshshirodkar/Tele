@@ -39,12 +39,12 @@ class MediaContextMenuDialogFragment : DialogFragment(R.layout.dialog_media_cont
             dismiss()
         }
         details.setOnClickListener {
-            (parentFragment as? Listener)?.onContextDetails(mediaItem)
             dismiss()
+            (parentFragment as? Listener)?.onContextDetails(mediaItem)
         }
         delete.setOnClickListener {
-            (parentFragment as? Listener)?.onContextDelete(mediaItem)
             dismiss()
+            (parentFragment as? Listener)?.onContextDelete(mediaItem)
         }
 
         playNow.requestFocus()

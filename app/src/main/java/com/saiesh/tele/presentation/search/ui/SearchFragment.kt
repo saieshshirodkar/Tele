@@ -41,8 +41,6 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
 
         queryInput.post {
             queryInput.requestFocus()
-            val inputManager = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            inputManager.showSoftInput(queryInput, InputMethodManager.SHOW_IMPLICIT)
         }
 
         queryInput.addTextChangedListener { viewModel.updateQuery(it?.toString().orEmpty()) }

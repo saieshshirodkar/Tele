@@ -15,6 +15,10 @@ import java.util.Date
 import java.util.Locale
 
 class MediaDetailsDialogFragment : DialogFragment(R.layout.dialog_media_details) {
+    interface Listener {
+        fun onDetailsDismiss()
+    }
+
     private val mediaItem: MediaItem by lazy {
         BundleCompat.getSerializable(requireArguments(), ARG_ITEM, MediaItem::class.java)
             ?: error("Missing media item")
@@ -26,9 +30,14 @@ class MediaDetailsDialogFragment : DialogFragment(R.layout.dialog_media_details)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        view.findViewById<View>(R.id.details_overlay).setOnClickListener { dismiss() }
+        view.findViewById<View>(R.id.details_overlay).setOnClickListener { dismissAndNotify() }
         view.findViewById<TextView>(R.id.details_title).text = mediaItem.title
         view.findViewById<TextView>(R.id.details_body).text = buildDetailsText()
+    }
+
+    private fun dismissAndNotify() {
+        dismiss()
+        (parentFragment as? Listener)?.onDetailsDismiss()
     }
 
     override fun onStart() {

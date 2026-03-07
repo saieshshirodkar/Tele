@@ -13,6 +13,7 @@ import com.saiesh.tele.domain.model.media.MediaItem
 class ConfirmDeleteDialogFragment : DialogFragment(R.layout.dialog_confirm_delete) {
     interface Listener {
         fun onConfirmDelete(item: MediaItem)
+        fun onDeleteDismiss()
     }
 
     private val mediaItem: MediaItem by lazy {
@@ -26,7 +27,7 @@ class ConfirmDeleteDialogFragment : DialogFragment(R.layout.dialog_confirm_delet
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        view.findViewById<View>(R.id.confirm_overlay).setOnClickListener { dismiss() }
+        view.findViewById<View>(R.id.confirm_overlay).setOnClickListener { dismissAndNotify() }
         view.findViewById<TextView>(R.id.confirm_title).text = getString(R.string.context_delete_title)
         view.findViewById<TextView>(R.id.confirm_message).text =
             getString(R.string.context_delete_message, mediaItem.title)
@@ -38,9 +39,14 @@ class ConfirmDeleteDialogFragment : DialogFragment(R.layout.dialog_confirm_delet
             (parentFragment as? Listener)?.onConfirmDelete(mediaItem)
             dismiss()
         }
-        cancel.setOnClickListener { dismiss() }
+        cancel.setOnClickListener { dismissAndNotify() }
 
         cancel.requestFocus()
+    }
+
+    private fun dismissAndNotify() {
+        dismiss()
+        (parentFragment as? Listener)?.onDeleteDismiss()
     }
 
     override fun onStart() {

@@ -5,6 +5,7 @@ import com.saiesh.tele.domain.model.media.MediaItem
 import com.saiesh.tele.domain.model.search.SearchBotResponse
 import com.saiesh.tele.domain.model.search.SearchQueryResult
 import com.saiesh.tele.domain.model.media.VideoChatItem
+import org.drinkless.tdlib.TdApi
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 
@@ -30,6 +31,19 @@ class SavedMessagesRepository {
         onResult: (List<MediaItem>, Long, String?) -> Unit
     ) = loadLatestMediaPagedInternal(limit, fromMessageId, onResult)
 
+    fun getMessage(chatId: Long, messageId: Long, onResult: (MediaItem?, String?) -> Unit) {
+        client.send(TdApi.GetMessage(chatId, messageId)) { result ->
+            when (result) {
+                is TdApi.Message -> {
+                    val item = mapMessageToMediaInternal(result)
+                    onResult(item, null)
+                }
+                is TdApi.Error -> onResult(null, result.message)
+                else -> onResult(null, "Failed to load message")
+            }
+        }
+    }
+
     fun loadChatMedia(chatId: Long, limit: Int, onResult: (List<MediaItem>, String?) -> Unit) =
         loadChatMediaInternal(chatId, limit, onResult)
 
@@ -40,14 +54,17 @@ class SavedMessagesRepository {
         onResult: (List<MediaItem>, Long, String?) -> Unit
     ) = loadChatMediaPagedInternal(chatId, limit, fromMessageId, onResult)
 
-    fun loadVideoChats(limit: Int, onResult: (List<VideoChatItem>, String?) -> Unit) =
-        loadVideoChatsInternal(limit, onResult)
+    fun loadVideoChats(limit: Int, selectedChatId: Long?, onResult: (List<VideoChatItem>, String?) -> Unit) =
+        loadVideoChatsInternal(limit, selectedChatId, onResult)
 
     fun searchProBot(query: String, onResult: (SearchBotResponse) -> Unit) =
         searchProBotInternal(query, onResult)
 
     fun submitProBotSelection(result: SearchQueryResult, onResult: (SearchBotResponse) -> Unit) =
         submitProBotSelectionInternal(result, onResult)
+
+    fun autoProcessInvite(url: String, onResult: (String?) -> Unit) =
+        autoProcessInviteInternal(url, onResult)
 
     fun saveSearchMediaToSavedMessages(item: MediaItem, onResult: (String?) -> Unit) =
         saveSearchMediaInternal(item, onResult)

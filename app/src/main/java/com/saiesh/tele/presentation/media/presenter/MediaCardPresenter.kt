@@ -7,6 +7,7 @@ import androidx.leanback.widget.ImageCardView
 import androidx.leanback.widget.Presenter
 import com.bumptech.glide.Glide
 import java.io.File
+import com.saiesh.tele.R
 import com.saiesh.tele.data.cache.image.ImageCache
 import com.saiesh.tele.domain.model.media.MediaItem
 import com.saiesh.tele.domain.model.media.MediaType
@@ -51,9 +52,23 @@ class MediaCardPresenter(
         when {
             !media.thumbnailPath.isNullOrBlank() -> {
                 imageView?.let { target ->
+                    val miniBitmap = if (media.miniThumbnailBytes != null) {
+                        ImageCache.getMini(media.messageId)
+                            ?: BitmapFactory.decodeByteArray(media.miniThumbnailBytes, 0, media.miniThumbnailBytes.size)
+                                ?.also { decoded -> ImageCache.putMini(media.messageId, decoded) }
+                    } else null
+
                     Glide.with(cardView)
                         .load(File(media.thumbnailPath!!))
                         .centerCrop()
+                        .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
+                        .let { request ->
+                            if (miniBitmap != null) {
+                                request.thumbnail(Glide.with(cardView).load(miniBitmap))
+                            } else {
+                                request.placeholder(R.drawable.no_thumbnail)
+                            }
+                        }
                         .into(target)
                 }
             }
@@ -63,7 +78,9 @@ class MediaCardPresenter(
                         ?.also { decoded -> ImageCache.putMini(media.messageId, decoded) }
                 imageView?.setImageBitmap(bitmap)
             }
-            else -> imageView?.setImageDrawable(null)
+            else -> {
+                imageView?.setImageResource(R.drawable.no_thumbnail)
+            }
         }
     }
 

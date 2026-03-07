@@ -6,8 +6,14 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.graphics.Typeface
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.StyleSpan
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -34,8 +40,9 @@ import kotlinx.coroutines.launch
 
 class BrowseFragment : BrowseSupportFragment(),
     MediaContextMenuDialogFragment.Listener,
-    ConfirmDeleteDialogFragment.Listener {
-    private val mediaViewModel: MediaViewModel by viewModels()
+    ConfirmDeleteDialogFragment.Listener,
+    MediaDetailsDialogFragment.Listener {
+    private val mediaViewModel: MediaViewModel by activityViewModels()
     private val searchViewModel: SearchViewModel by activityViewModels()
 
     private val rowsAdapter = ArrayObjectAdapter(ListRowPresenter())
@@ -48,6 +55,7 @@ class BrowseFragment : BrowseSupportFragment(),
     private var mediaRowViewHolder: ListRowPresenter.ViewHolder? = null
     private var pendingFocusFirstItem = false
     private var lastChatKey: Long? = null
+    private var lastContextItem: MediaItem? = null
     private val mediaDiff = object : DiffCallback<MediaItem>() {
         override fun areItemsTheSame(oldItem: MediaItem, newItem: MediaItem): Boolean {
             return oldItem.messageId == newItem.messageId
@@ -82,10 +90,9 @@ class BrowseFragment : BrowseSupportFragment(),
         setupListeners()
     }
 
-    override fun onStart() {
-        super.onStart()
-        mediaViewModel.loadIfNeeded()
-        mediaViewModel.loadVideoChatsIfNeeded()
+    override fun onResume() {
+        super.onResume()
+        mediaViewModel.initialize()
     }
 
     override fun onViewCreated(view: android.view.View, savedInstanceState: Bundle?) {
@@ -129,7 +136,11 @@ class BrowseFragment : BrowseSupportFragment(),
                             lastChatKey = chatKey
                             pendingFocusFirstItem = true
                         }
-                        title = state.selectedChatTitle
+                        val rawTitle = state.selectedChatTitle ?: ""
+                        val boldTitle = SpannableString(rawTitle).apply {
+                            setSpan(StyleSpan(Typeface.BOLD), 0, rawTitle.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                        }
+                        title = boldTitle
                         updateMediaItems(state.items)
                         updateChatItems(state.videoChats)
                         if (state.error != null) {
@@ -226,6 +237,7 @@ class BrowseFragment : BrowseSupportFragment(),
 
     private fun showContextMenu(item: MediaItem) {
         if (childFragmentManager.findFragmentByTag(TAG_CONTEXT_MENU) != null) return
+        lastContextItem = item
         MediaContextMenuDialogFragment
             .newInstance(item)
             .show(childFragmentManager, TAG_CONTEXT_MENU)
@@ -251,12 +263,22 @@ class BrowseFragment : BrowseSupportFragment(),
 
     override fun onConfirmDelete(item: MediaItem) {
         mediaViewModel.deleteMediaItem(item) { error ->
-            if (error != null) {
-                Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show()
-            } else {
-                Toast.makeText(requireContext(), "Deleted", Toast.LENGTH_SHORT).show()
+            Handler(Looper.getMainLooper()).post {
+                if (error != null) {
+                    Toast.makeText(requireActivity(), error, Toast.LENGTH_LONG).show()
+                } else {
+                    Toast.makeText(requireActivity(), "Deleted", Toast.LENGTH_SHORT).show()
+                }
             }
         }
+    }
+
+    override fun onDetailsDismiss() {
+        // Context menu is now dismissed before showing details, so we just let Leanback handle focus
+    }
+
+    override fun onDeleteDismiss() {
+        // Context menu is now dismissed before showing delete confirm, so we just let Leanback handle focus
     }
 
     companion object {

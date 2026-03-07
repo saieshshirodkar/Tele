@@ -12,12 +12,7 @@ import com.saiesh.tele.domain.model.media.VideoChatItem
 class VideoChatPresenter : Presenter() {
     override fun onCreateViewHolder(parent: ViewGroup): Presenter.ViewHolder {
         val context = parent.context
-        val textView = object : TextView(context) {
-            override fun setSelected(selected: Boolean) {
-                super.setSelected(selected)
-                applyStyle(this, selected)
-            }
-        }.apply {
+        val textView = TextView(context).apply {
             isFocusable = true
             isFocusableInTouchMode = true
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
@@ -37,17 +32,13 @@ class VideoChatPresenter : Presenter() {
         val chat = item as? VideoChatItem ?: return
         val textView = viewHolder.view as TextView
         textView.text = chat.title
+        if (chat.isSelected) {
+            textView.background = ContextCompat.getDrawable(textView.context, R.drawable.chat_item_selected_background)
+        } else {
+            textView.background = ContextCompat.getDrawable(textView.context, R.drawable.chat_item_background)
+        }
+        textView.setTextColor(ContextCompat.getColor(textView.context, android.R.color.white))
     }
 
     override fun onUnbindViewHolder(viewHolder: Presenter.ViewHolder) = Unit
-
-    private fun applyStyle(textView: TextView, isFocused: Boolean) {
-        val context = textView.context
-        val defaultColor = ContextCompat.getColor(context, R.color.default_background)
-        val selectedColor = ContextCompat.getColor(context, R.color.selected_background)
-        val defaultText = ContextCompat.getColor(context, android.R.color.darker_gray)
-        val selectedText = ContextCompat.getColor(context, android.R.color.white)
-        textView.setBackgroundColor(if (isFocused) selectedColor else defaultColor)
-        textView.setTextColor(if (isFocused) selectedText else defaultText)
-    }
 }

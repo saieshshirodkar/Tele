@@ -27,6 +27,11 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setupExitHandler()
+        if (savedInstanceState == null) {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.main_browse_fragment, BrowseFragment())
+                .commitNow()
+        }
         val authViewModel = ViewModelProvider(this)[AuthViewModel::class.java]
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -36,7 +41,7 @@ class MainActivity : FragmentActivity() {
                         if (current !is BrowseFragment && current !is SearchFragment) {
                             showBrowse()
                         }
-                    } else if (current !is AuthFragment) {
+                    } else if (state.step != AuthStep.Loading && current !is AuthFragment) {
                         supportFragmentManager.popBackStack()
                         supportFragmentManager.beginTransaction()
                             .replace(R.id.main_browse_fragment, AuthFragment())
