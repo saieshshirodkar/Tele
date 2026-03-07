@@ -20,7 +20,10 @@ jobs:
           lfs: true
 
       - name: Pull LFS files
-        run: git lfs pull
+        run: |
+          git lfs install --local
+          git lfs fetch
+          git lfs checkout
 
       - name: Set up JDK
         uses: actions/setup-java@v4
