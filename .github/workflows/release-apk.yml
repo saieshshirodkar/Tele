@@ -39,10 +39,15 @@ jobs:
 
       - name: Rename APK with version
         run: |
-          VERSION=$(echo ${{ github.ref_name }} | sed 's/^v//')
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            VERSION=$(echo ${{ github.ref_name }} | sed 's/^v//')
+          else
+            VERSION="${{ github.ref_name }}"
+          fi
           mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/Tele-${VERSION}.apk
 
       - name: Upload release APK
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
           files: app/build/outputs/apk/release/Tele-*.apk
