@@ -17,13 +17,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          lfs: true
-
-      - name: Pull LFS files
-        run: |
-          git lfs install --local
-          git lfs fetch
-          git lfs checkout
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -40,6 +33,16 @@ jobs:
         run: |
           echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
 
+      - name: Create local.properties
+        run: |
+          cat > local.properties << EOF
+          sdk.dir=$ANDROID_HOME
+          RELEASE_STORE_FILE=app/release.keystore
+          RELEASE_STORE_PASSWORD=${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS=${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD=${{ secrets.RELEASE_KEY_PASSWORD }}
+          EOF
+
       - name: Build signed release APK
         run: ./gradlew assembleRelease
 
@@ -55,5 +58,10 @@ jobs:
       - name: Upload release APK
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
           files: app/build/outputs/apk/release/Tele-*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
