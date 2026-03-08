@@ -23,7 +23,7 @@ Keep these private. Don't share your API Hash with anyone.
 
 ## Download
 
-Head over to the [Releases](https://github.com/saieshshirodkar/Tele/releases) page and download the latest APK file. Look for something like `Tele-0.0.1.apk`.
+Head over to the [Releases](https://github.com/saieshshirodkar/Tele/releases) page and download the latest APK file. Look for something like `Tele-0.0.2.apk`.
 
 ## Install
 
@@ -40,7 +40,7 @@ There are two ways to install:
 - Run this command on your computer:
   ```
   adb connect <your-tv-ip>
-  adb install Tele-0.0.1.apk
+  adb install Tele-0.0.2.apk
   ```
 
 ## Setting up the app
@@ -53,7 +53,11 @@ The first time you open Tele, you'll need to do a quick setup:
 
 3. **Verify** - Check your Telegram app or phone for a login code and enter it
 
-4. **Done** - You're in! Browse your chats and play media.
+4. **MPV** - Download and setup MPV as it's the player used in the app
+
+5. **Filetolink bot** - Set up Filetolink in Telegram (only once) as it's the file host used in the app
+
+6. **Done** - You're in! Browse your chats and play media.
 
 The app saves your API keys securely on your TV so you only need to enter them once.
 
