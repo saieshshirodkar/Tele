@@ -140,7 +140,7 @@ private fun SavedMessagesRepository.hasVideoInChatInternal(chatId: Long, onResul
     }
 
     filters.forEach { filter ->
-        searchWithFilterInternal(chatId, 1, null, filter) { items ->
+        searchWithFilterInternal(chatId, 1, null, filter) { items, _ ->
             if (!completed.get() && items.any { it.type == MediaType.Video }) {
                 found.set(true)
             }

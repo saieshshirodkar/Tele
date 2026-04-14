@@ -33,20 +33,20 @@ internal fun SavedMessagesRepository.searchMediaInternal(
         }
     }
 
-    searchWithFilterInternal(chatId, perFilterLimit, fromMessageId, TdApi.SearchMessagesFilterVideo()) {
-        collect(it, null)
+    searchWithFilterInternal(chatId, perFilterLimit, fromMessageId, TdApi.SearchMessagesFilterVideo()) { items, err ->
+        collect(items, err)
     }
-    searchWithFilterInternal(chatId, perFilterLimit, fromMessageId, TdApi.SearchMessagesFilterDocument()) {
-        collect(it, null)
+    searchWithFilterInternal(chatId, perFilterLimit, fromMessageId, TdApi.SearchMessagesFilterDocument()) { items, err ->
+        collect(items, err)
     }
-    searchWithFilterInternal(chatId, perFilterLimit, fromMessageId, TdApi.SearchMessagesFilterVideoNote()) {
-        collect(it, null)
+    searchWithFilterInternal(chatId, perFilterLimit, fromMessageId, TdApi.SearchMessagesFilterVideoNote()) { items, err ->
+        collect(items, err)
     }
-    searchWithFilterInternal(chatId, perFilterLimit, fromMessageId, TdApi.SearchMessagesFilterAnimation()) {
-        collect(it, null)
+    searchWithFilterInternal(chatId, perFilterLimit, fromMessageId, TdApi.SearchMessagesFilterAnimation()) { items, err ->
+        collect(items, err)
     }
-    searchWithFilterInternal(chatId, perFilterLimit, fromMessageId, TdApi.SearchMessagesFilterPhotoAndVideo()) {
-        collect(it, null)
+    searchWithFilterInternal(chatId, perFilterLimit, fromMessageId, TdApi.SearchMessagesFilterPhotoAndVideo()) { items, err ->
+        collect(items, err)
     }
 }
 
@@ -55,7 +55,7 @@ internal fun SavedMessagesRepository.searchWithFilterInternal(
     limit: Int,
     fromMessageId: Long?,
     filter: TdApi.SearchMessagesFilter,
-    onItems: (List<MediaItem>) -> Unit
+    onItems: (List<MediaItem>, String?) -> Unit
 ) {
     val offset = if (fromMessageId == null || fromMessageId == 0L) 0 else 1
     val query = TdApi.SearchChatMessages(
@@ -72,9 +72,10 @@ internal fun SavedMessagesRepository.searchWithFilterInternal(
         when (result) {
             is TdApi.FoundChatMessages -> {
                 val items = result.messages?.mapNotNull(::mapMessageToMediaInternal).orEmpty()
-                onItems(items)
+                onItems(items, null)
             }
-            else -> onItems(emptyList())
+            is TdApi.Error -> onItems(emptyList(), result.message)
+            else -> onItems(emptyList(), "Unknown response from TDLib")
         }
     }
 }
