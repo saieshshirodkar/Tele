@@ -38,6 +38,7 @@ internal fun SavedMessagesRepository.requestFastLinkInternal(
 
             val completed = AtomicBoolean(false)
             lateinit var updateHandler: (TdApi.Object?) -> Unit
+
             val timeoutFuture = handlerScheduler.schedule({
                 if (completed.compareAndSet(false, true)) {
                     TdLibClient.removeUpdateHandler(updateHandler)
@@ -45,11 +46,12 @@ internal fun SavedMessagesRepository.requestFastLinkInternal(
                 }
             }, HANDLER_TIMEOUT_SECONDS, TimeUnit.SECONDS)
 
-            updateHandler = replyHandler@{ update ->
-                val newMessage = (update as? TdApi.UpdateNewMessage)?.message ?: return@replyHandler
-                if (newMessage.chatId != botChat.id) return@replyHandler
+            updateHandler = updateHandler@{ update ->
+                if (completed.get()) return@updateHandler
+                val newMessage = (update as? TdApi.UpdateNewMessage)?.message ?: return@updateHandler
+                if (newMessage.chatId != botChat.id) return@updateHandler
 
-                val content = newMessage.content as? TdApi.MessageText ?: return@replyHandler
+                val content = newMessage.content as? TdApi.MessageText ?: return@updateHandler
                 val text = content.text.text
 
                 val replyTo = newMessage.replyTo as? TdApi.MessageReplyToMessage
@@ -58,15 +60,14 @@ internal fun SavedMessagesRepository.requestFastLinkInternal(
 
                 if (isDirectReply || containsLink) {
                     val link = extractFastDownloadLinkInternal(text)
-                    if (link != null) {
-                        if (completed.compareAndSet(false, true)) {
-                            timeoutFuture.cancel(false)
-                            TdLibClient.removeUpdateHandler(updateHandler)
-                            onResult(link, null)
-                        }
+                    if (link != null && completed.compareAndSet(false, true)) {
+                        timeoutFuture.cancel(false)
+                        TdLibClient.removeUpdateHandler(updateHandler)
+                        onResult(link, null)
                     }
                 }
             }
+
             TdLibClient.addUpdateHandler(updateHandler)
         }
     }
@@ -75,7 +76,7 @@ internal fun SavedMessagesRepository.requestFastLinkInternal(
 private fun extractFastDownloadLinkInternal(text: String): String? {
     val lines = text.lineSequence().toList()
 
-    val fastLine = lines.firstOrNull { it.contains("Fast Download Link", ignoreCase = true) }
+    val fastLine = lines.firstOrNull { it.contains("Download Link:", ignoreCase = true) }
     if (fastLine != null) {
         val urlRegex = "https?://\\S+".toRegex()
         urlRegex.find(fastLine)?.value?.trimEnd('.', ',', ')', ']', '>')?.let { return it }

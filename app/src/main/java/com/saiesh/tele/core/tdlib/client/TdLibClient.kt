@@ -1,10 +1,12 @@
 package com.saiesh.tele.core.tdlib.client
 
+import android.util.Log
 import org.drinkless.tdlib.Client
 import org.drinkless.tdlib.TdApi
 import java.util.concurrent.CopyOnWriteArrayList
 
 object TdLibClient {
+    private const val TAG = "TdLibClient"
     private val updateHandlers = CopyOnWriteArrayList<(TdApi.Object?) -> Unit>()
     private val errorHandlers = CopyOnWriteArrayList<(Throwable?) -> Unit>()
     private val newMessageHandlers = CopyOnWriteArrayList<(TdApi.UpdateNewMessage) -> Unit>()
@@ -12,22 +14,37 @@ object TdLibClient {
 
     val client: Client by lazy {
         Client.create(
-            { update -> 
-                updateHandlers.forEach { it(update) }
-                when (update) {
-                    is TdApi.UpdateNewMessage -> {
-                        newMessageHandlers.forEach { handler ->
-                            try { handler(update) } catch (_: Exception) {}
+            { update ->
+                try {
+                    updateHandlers.forEach { it(update) }
+                    when (update) {
+                        is TdApi.UpdateNewMessage -> {
+                            newMessageHandlers.forEach { handler ->
+                                try { handler(update) } catch (e: Exception) {
+                                    Log.e(TAG, "Error in new message handler", e)
+                                }
+                            }
+                        }
+                        is TdApi.UpdateDeleteMessages -> {
+                            deleteMessageHandlers.forEach { handler ->
+                                try { handler(update) } catch (e: Exception) {
+                                    Log.e(TAG, "Error in delete message handler", e)
+                                }
+                            }
                         }
                     }
-                    is TdApi.UpdateDeleteMessages -> {
-                        deleteMessageHandlers.forEach { handler ->
-                            try { handler(update) } catch (_: Exception) {}
-                        }
-                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error dispatching update", e)
                 }
             },
-            { error -> errorHandlers.forEach { it(error) } },
+            { error ->
+                try {
+                    errorHandlers.forEach { it(error) }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error in error handler", e)
+                }
+                Log.e(TAG, "TDLib error", error)
+            },
             null
         )
     }

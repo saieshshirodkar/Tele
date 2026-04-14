@@ -3,8 +3,6 @@ package com.saiesh.tele.presentation.media.ui
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.graphics.Typeface
 import android.text.SpannableString
@@ -15,7 +13,6 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -35,7 +32,6 @@ import com.saiesh.tele.domain.model.media.VideoChatItem
 import com.saiesh.tele.presentation.media.presenter.MediaCardPresenter
 import com.saiesh.tele.presentation.media.presenter.VideoChatPresenter
 import com.saiesh.tele.presentation.media.vm.MediaViewModel
-import com.saiesh.tele.presentation.search.vm.SearchViewModel
 import kotlinx.coroutines.launch
 
 class BrowseFragment : BrowseSupportFragment(),
@@ -43,7 +39,6 @@ class BrowseFragment : BrowseSupportFragment(),
     ConfirmDeleteDialogFragment.Listener,
     MediaDetailsDialogFragment.Listener {
     private val mediaViewModel: MediaViewModel by activityViewModels()
-    private val searchViewModel: SearchViewModel by activityViewModels()
 
     private val rowsAdapter = ArrayObjectAdapter(ListRowPresenter())
     private val mediaAdapter = ArrayObjectAdapter(MediaCardPresenter { item ->
@@ -80,10 +75,6 @@ class BrowseFragment : BrowseSupportFragment(),
         title = getString(R.string.app_name)
         headersState = HEADERS_ENABLED
         isHeadersTransitionOnBackEnabled = true
-        searchAffordanceColor = ContextCompat.getColor(requireContext(), R.color.selected_background)
-        setOnSearchClickedListener {
-            (activity as? MainActivity)?.showSearch()
-        }
         rowsAdapter.add(ListRow(mediaHeader, mediaAdapter))
         rowsAdapter.add(ListRow(chatHeader, chatAdapter))
         adapter = rowsAdapter
@@ -151,14 +142,6 @@ class BrowseFragment : BrowseSupportFragment(),
                         }
                     }
                 }
-                launch {
-                    searchViewModel.uiState.collect { state ->
-                        if (state.refreshMedia) {
-                            mediaViewModel.load()
-                            searchViewModel.consumeRefreshMedia()
-                        }
-                    }
-                }
             }
         }
     }
@@ -194,44 +177,41 @@ class BrowseFragment : BrowseSupportFragment(),
         }
         Toast.makeText(requireContext(), "Fetching fast link...", Toast.LENGTH_SHORT).show()
         mediaViewModel.requestFastLink(item) { url, error ->
-            fun launch() {
-                if (url.isNullOrBlank()) {
-                    Toast.makeText(
-                        requireContext(),
-                        error ?: "Fast link not found",
-                        Toast.LENGTH_LONG
-                    ).show()
-                    return
-                }
-                Log.d("Tele", "Launching MPV with fast link url=$url")
-                val uri = android.net.Uri.parse(url)
-                val intent = Intent(Intent.ACTION_VIEW)
-                    .setDataAndType(uri, "video/*")
-                    .addCategory(Intent.CATEGORY_BROWSABLE)
-
-                val mpvPackage = "is.xyz.mpv"
-                val hasMpv = try {
-                    requireContext().packageManager.getPackageInfo(mpvPackage, 0)
-                    true
-                } catch (_: PackageManager.NameNotFoundException) {
-                    false
-                }
-                if (hasMpv) {
-                    intent.setClassName(mpvPackage, "is.xyz.mpv.MPVActivity")
-                    intent.putExtra(Intent.EXTRA_TITLE, item.title)
-                } else {
-                    Log.w("Tele", "MPV package not found: $mpvPackage")
-                }
-
-                try {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    requireContext().startActivity(intent)
-                } catch (e: Exception) {
-                    Log.e("Tele", "Failed to launch external player", e)
-                    Toast.makeText(requireContext(), "No player found", Toast.LENGTH_LONG).show()
-                }
+            if (url.isNullOrBlank()) {
+                Toast.makeText(
+                    requireContext(),
+                    error ?: "Fast link not found",
+                    Toast.LENGTH_LONG
+                ).show()
+                return@requestFastLink
             }
-            Handler(Looper.getMainLooper()).post { launch() }
+            Log.d("Tele", "Launching MPV with fast link url=$url")
+            val uri = android.net.Uri.parse(url)
+            val intent = Intent(Intent.ACTION_VIEW)
+                .setDataAndType(uri, "video/*")
+                .addCategory(Intent.CATEGORY_BROWSABLE)
+
+            val mpvPackage = "is.xyz.mpv"
+            val hasMpv = try {
+                requireContext().packageManager.getPackageInfo(mpvPackage, 0)
+                true
+            } catch (_: PackageManager.NameNotFoundException) {
+                false
+            }
+            if (hasMpv) {
+                intent.setClassName(mpvPackage, "is.xyz.mpv.MPVActivity")
+                intent.putExtra(Intent.EXTRA_TITLE, item.title)
+            } else {
+                Log.w("Tele", "MPV package not found: $mpvPackage")
+            }
+
+            try {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                requireContext().startActivity(intent)
+            } catch (e: Exception) {
+                Log.e("Tele", "Failed to launch external player", e)
+                Toast.makeText(requireContext(), "No player found", Toast.LENGTH_LONG).show()
+            }
         }
     }
 
@@ -263,22 +243,18 @@ class BrowseFragment : BrowseSupportFragment(),
 
     override fun onConfirmDelete(item: MediaItem) {
         mediaViewModel.deleteMediaItem(item) { error ->
-            Handler(Looper.getMainLooper()).post {
-                if (error != null) {
-                    Toast.makeText(requireActivity(), error, Toast.LENGTH_LONG).show()
-                } else {
-                    Toast.makeText(requireActivity(), "Deleted", Toast.LENGTH_SHORT).show()
-                }
+            if (error != null) {
+                Toast.makeText(requireActivity(), error, Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(requireActivity(), "Deleted", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     override fun onDetailsDismiss() {
-        // Context menu is now dismissed before showing details, so we just let Leanback handle focus
     }
 
     override fun onDeleteDismiss() {
-        // Context menu is now dismissed before showing delete confirm, so we just let Leanback handle focus
     }
 
     companion object {

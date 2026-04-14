@@ -15,12 +15,8 @@ import com.saiesh.tele.presentation.auth.ui.AuthFragment
 import com.saiesh.tele.domain.model.auth.AuthStep
 import com.saiesh.tele.presentation.auth.vm.AuthViewModel
 import com.saiesh.tele.presentation.media.ui.BrowseFragment
-import com.saiesh.tele.presentation.search.ui.SearchFragment
 import kotlinx.coroutines.launch
 
-/**
- * Loads [AuthFragment] or [BrowseFragment] based on auth state.
- */
 class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,7 +34,7 @@ class MainActivity : FragmentActivity() {
                 authViewModel.uiState.collect { state ->
                     val current = supportFragmentManager.findFragmentById(R.id.main_browse_fragment)
                     if (state.step == AuthStep.Authorized) {
-                        if (current !is BrowseFragment && current !is SearchFragment) {
+                        if (current !is BrowseFragment) {
                             showBrowse()
                         }
                     } else if (state.step != AuthStep.Loading && current !is AuthFragment) {
@@ -52,15 +48,7 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    fun showSearch() {
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.main_browse_fragment, SearchFragment())
-            .addToBackStack("search")
-            .commit()
-    }
-
     fun showBrowse() {
-        supportFragmentManager.popBackStack("search", 0)
         val current = supportFragmentManager.findFragmentById(R.id.main_browse_fragment)
         if (current !is BrowseFragment) {
             supportFragmentManager.beginTransaction()

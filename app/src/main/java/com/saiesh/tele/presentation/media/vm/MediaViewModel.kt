@@ -12,14 +12,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.drinkless.tdlib.TdApi
 
-object MediaCache {
-    var items: List<MediaItem> = emptyList()
-    var chatId: Long? = null
-    var isSavedMessages: Boolean = true
-    var nextFromMessageId: Long = 0L
-    var hasLoaded: Boolean = false
-}
-
 class MediaViewModel(
     private val repository: SavedMessagesRepository = SavedMessagesRepository()
 ) : ViewModel() {
@@ -72,35 +64,35 @@ class MediaViewModel(
         }
     }
 
+    private val chatUpdateHandler: (TdApi.Object?) -> Unit = { update ->
+        when (update) {
+            is TdApi.UpdateNewChat,
+            is TdApi.UpdateChatAddedToList,
+            is TdApi.UpdateChatRemovedFromList,
+            is TdApi.UpdateChatPosition -> {
+                loadVideoChats()
+            }
+        }
+    }
+
     init {
         TdLibClient.addNewMessageHandler(newMessageHandler)
         TdLibClient.addDeleteMessageHandler(deleteMessageHandler)
+        TdLibClient.addUpdateHandler(chatUpdateHandler)
     }
 
     fun initialize() {
         if (isInitialized) return
         isInitialized = true
-        if (MediaCache.hasLoaded && MediaCache.items.isNotEmpty()) {
-            _uiState.update {
-                it.copy(
-                    items = MediaCache.items,
-                    selectedChatId = MediaCache.chatId,
-                    isSavedMessagesSelected = MediaCache.isSavedMessages,
-                    nextFromMessageId = MediaCache.nextFromMessageId,
-                    hasMore = MediaCache.nextFromMessageId != 0L,
-                    isLoading = false
-                )
-            }
-            fetchThumbnails(MediaCache.items)
-        } else {
-            refresh()
-        }
+        refresh()
         loadVideoChats()
     }
 
     override fun onCleared() {
         TdLibClient.removeNewMessageHandler(newMessageHandler)
         TdLibClient.removeDeleteMessageHandler(deleteMessageHandler)
+        TdLibClient.removeUpdateHandler(chatUpdateHandler)
+        repository.shutdown()
         super.onCleared()
     }
 
@@ -118,11 +110,6 @@ class MediaViewModel(
             )
         }
         repository.loadLatestMediaPaged(pageSize, null) { items, nextFromMessageId, error ->
-            MediaCache.items = items
-            MediaCache.chatId = null
-            MediaCache.isSavedMessages = true
-            MediaCache.nextFromMessageId = nextFromMessageId
-            MediaCache.hasLoaded = true
             _uiState.update { current ->
                 current.copy(
                     items = items,
@@ -170,11 +157,6 @@ class MediaViewModel(
         }
         loadVideoChats()
         repository.loadChatMediaPaged(chatId, pageSize, null) { items, nextFromMessageId, error ->
-            MediaCache.items = items
-            MediaCache.chatId = chatId
-            MediaCache.isSavedMessages = false
-            MediaCache.nextFromMessageId = nextFromMessageId
-            MediaCache.hasLoaded = true
             _uiState.update { current ->
                 current.copy(
                     items = items,
@@ -212,8 +194,6 @@ class MediaViewModel(
     private fun handleLoadMore(items: List<MediaItem>, nextFromMessageId: Long, error: String?) {
         _uiState.update { current ->
             val merged = (current.items + items).distinctBy { it.messageId }
-            MediaCache.items = merged
-            MediaCache.nextFromMessageId = nextFromMessageId
             current.copy(
                 items = merged,
                 isLoadingMore = false,

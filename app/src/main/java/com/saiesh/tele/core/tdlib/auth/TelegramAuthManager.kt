@@ -2,6 +2,7 @@ package com.saiesh.tele.core.tdlib.auth
 
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import com.saiesh.tele.BuildConfig
 import com.saiesh.tele.core.tdlib.client.TdLibClient
 import com.saiesh.tele.data.store.ApiCredentialsStore
@@ -14,6 +15,9 @@ import org.drinkless.tdlib.TdApi
 import java.io.File
 
 class TelegramAuthManager(private val context: Context) {
+    private companion object {
+        const val TAG = "TelegramAuthManager"
+    }
     private val _uiState = MutableStateFlow(AuthUiState(isLoading = true))
     val uiState: StateFlow<AuthUiState> = _uiState
 
@@ -70,6 +74,7 @@ class TelegramAuthManager(private val context: Context) {
     }
 
     private fun handleAuthState(state: TdApi.AuthorizationState?) {
+        Log.d(TAG, "Auth state: ${state?.javaClass?.simpleName}")
         when (state) {
             is TdApi.AuthorizationStateWaitTdlibParameters -> setTdlibParameters()
             is TdApi.AuthorizationStateWaitPhoneNumber -> {
@@ -99,6 +104,7 @@ class TelegramAuthManager(private val context: Context) {
 
     private fun handleResult(result: TdApi.Object?) {
         if (result is TdApi.Error) {
+            Log.e(TAG, "Auth error: ${result.code} ${result.message}")
             _uiState.update { state ->
                 state.copy(message = result.message, isLoading = false)
             }
@@ -106,6 +112,7 @@ class TelegramAuthManager(private val context: Context) {
     }
 
     private fun handleError(t: Throwable?) {
+        Log.e(TAG, "TDLib error", t)
         _uiState.update { state ->
             state.copy(message = t?.message ?: "TDLib error", isLoading = false)
         }
@@ -155,5 +162,10 @@ class TelegramAuthManager(private val context: Context) {
         client.send(parameters) { result ->
             handleResult(result)
         }
+    }
+
+    fun cleanup() {
+        TdLibClient.removeUpdateHandler(::handleUpdate)
+        TdLibClient.removeErrorHandler(::handleError)
     }
 }

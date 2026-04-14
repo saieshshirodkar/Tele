@@ -76,7 +76,11 @@ class MediaCardPresenter(
                 val bitmap = ImageCache.getMini(media.messageId)
                     ?: BitmapFactory.decodeByteArray(media.miniThumbnailBytes, 0, media.miniThumbnailBytes.size)
                         ?.also { decoded -> ImageCache.putMini(media.messageId, decoded) }
-                imageView?.setImageBitmap(bitmap)
+                if (bitmap != null) {
+                    imageView?.setImageBitmap(bitmap)
+                } else {
+                    imageView?.setImageResource(R.drawable.no_thumbnail)
+                }
             }
             else -> {
                 imageView?.setImageResource(R.drawable.no_thumbnail)

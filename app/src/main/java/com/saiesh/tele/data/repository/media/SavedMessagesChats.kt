@@ -1,5 +1,6 @@
 package com.saiesh.tele.data.repository.media
 
+import android.util.Log
 import com.saiesh.tele.domain.model.media.MediaType
 import com.saiesh.tele.domain.model.media.VideoChatItem
 import org.drinkless.tdlib.TdApi
@@ -23,6 +24,7 @@ internal fun SavedMessagesRepository.loadVideoChatsInternal(
                 onResult(emptyList(), null)
                 return@chatsSend
             }
+            Log.d(SavedMessagesRepository.TAG, "Found ${chatIds.size} chats")
             val pending = AtomicInteger(chatIds.size)
             val lock = Any()
             val chatMap = mutableMapOf<Long, VideoChatItem>()
@@ -118,41 +120,31 @@ internal fun SavedMessagesRepository.loadSavedMessagesChatInternal(
 }
 
 private fun SavedMessagesRepository.hasVideoInChatInternal(chatId: Long, onResult: (Boolean) -> Unit) {
-    val pending = AtomicInteger(5)
+    val filters = listOf(
+        TdApi.SearchMessagesFilterVideo(),
+        TdApi.SearchMessagesFilterDocument(),
+        TdApi.SearchMessagesFilterVideoNote(),
+        TdApi.SearchMessagesFilterAnimation(),
+        TdApi.SearchMessagesFilterPhotoAndVideo()
+    )
+    val pending = AtomicInteger(filters.size)
     val found = AtomicBoolean(false)
+    var completed = false
+
     fun finish() {
-        if (pending.decrementAndGet() == 0) {
+        if (completed) return
+        if (found.get() || pending.decrementAndGet() == 0) {
+            completed = true
             onResult(found.get())
         }
     }
-    searchWithFilterInternal(chatId, 1, null, TdApi.SearchMessagesFilterVideo()) { items ->
-        if (items.any { it.type == MediaType.Video }) {
-            found.set(true)
+
+    filters.forEach { filter ->
+        searchWithFilterInternal(chatId, 1, null, filter) { items ->
+            if (!completed && items.any { it.type == MediaType.Video }) {
+                found.set(true)
+            }
+            finish()
         }
-        finish()
-    }
-    searchWithFilterInternal(chatId, 1, null, TdApi.SearchMessagesFilterDocument()) { items ->
-        if (items.any { it.type == MediaType.Video }) {
-            found.set(true)
-        }
-        finish()
-    }
-    searchWithFilterInternal(chatId, 1, null, TdApi.SearchMessagesFilterVideoNote()) { items ->
-        if (items.any { it.type == MediaType.Video }) {
-            found.set(true)
-        }
-        finish()
-    }
-    searchWithFilterInternal(chatId, 1, null, TdApi.SearchMessagesFilterAnimation()) { items ->
-        if (items.any { it.type == MediaType.Video }) {
-            found.set(true)
-        }
-        finish()
-    }
-    searchWithFilterInternal(chatId, 1, null, TdApi.SearchMessagesFilterPhotoAndVideo()) { items ->
-        if (items.any { it.type == MediaType.Video }) {
-            found.set(true)
-        }
-        finish()
     }
 }

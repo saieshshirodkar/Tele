@@ -1,5 +1,6 @@
 package com.saiesh.tele.data.repository.media
 
+import android.util.Log
 import com.saiesh.tele.domain.model.media.MediaItem
 import org.drinkless.tdlib.TdApi
 
@@ -18,8 +19,14 @@ internal fun SavedMessagesRepository.loadLatestMediaInternal(
                 cachedMeId = meResult.id
                 loadSavedMessagesChatInternal(meResult.id, limit, onResult)
             }
-            is TdApi.Error -> onResult(emptyList(), meResult.message)
-            else -> onResult(emptyList(), "Unexpected response from TDLib")
+            is TdApi.Error -> {
+                Log.e(SavedMessagesRepository.TAG, "Failed to get user: ${meResult.message}")
+                onResult(emptyList(), meResult.message)
+            }
+            else -> {
+                Log.e(SavedMessagesRepository.TAG, "Unexpected response from GetMe")
+                onResult(emptyList(), "Unexpected response from TDLib")
+            }
         }
     }
 }
@@ -62,7 +69,6 @@ private fun SavedMessagesRepository.loadMediaFromHistoryInternal(
     onResult: (List<MediaItem>, Long, String?) -> Unit
 ) {
     val collected = mutableListOf<MediaItem>()
-    val seen = mutableSetOf<Long>()
 
     fun finish(nextFromMessageId: Long, error: String? = null) {
         val ordered = collected
@@ -93,9 +99,7 @@ private fun SavedMessagesRepository.loadMediaFromHistoryInternal(
                     }
                     trimmed.forEach { message ->
                         val media = mapMessageToMediaInternal(message) ?: return@forEach
-                        if (seen.add(media.messageId)) {
-                            collected.add(media)
-                        }
+                        collected.add(media)
                     }
                     if (collected.size >= limit) {
                         val ordered = collected
@@ -116,8 +120,14 @@ private fun SavedMessagesRepository.loadMediaFromHistoryInternal(
                     }
                     fetch(lastMessageId)
                 }
-                is TdApi.Error -> finish(0L, result.message)
-                else -> finish(0L, "Failed to load chat history")
+                is TdApi.Error -> {
+                    Log.e(SavedMessagesRepository.TAG, "Failed to load chat history: ${result.message}")
+                    finish(0L, result.message)
+                }
+                else -> {
+                    Log.e(SavedMessagesRepository.TAG, "Unexpected response from GetChatHistory")
+                    finish(0L, "Failed to load chat history")
+                }
             }
         }
     }

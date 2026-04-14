@@ -42,7 +42,7 @@ class AuthFragment : Fragment(R.layout.fragment_auth) {
                 AuthStep.EnterApiKeys -> viewModel.submitApiKeys()
                 AuthStep.EnterPhone -> viewModel.submitPhone()
                 AuthStep.EnterCode -> viewModel.submitCode()
-                AuthStep.EnterPassword -> viewModel.submitPassword(passwordInput.text.toString())
+                AuthStep.EnterPassword -> viewModel.submitPassword()
                 else -> Unit
             }
         }

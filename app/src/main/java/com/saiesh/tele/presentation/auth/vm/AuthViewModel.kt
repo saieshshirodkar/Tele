@@ -23,6 +23,9 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                         step = state.step,
                         apiId = state.apiId,
                         apiHash = state.apiHash,
+                        phone = state.phone,
+                        code = state.code,
+                        password = state.password,
                         message = state.message,
                         isLoading = state.isLoading
                     )
@@ -83,11 +86,17 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         authManager.submitCode(code)
     }
 
-    fun submitPassword(password: String) {
+    fun submitPassword() {
+        val password = _uiState.value.password
         if (password.isBlank()) {
             _uiState.update { it.copy(message = "Enter your 2FA password") }
             return
         }
         authManager.submitPassword(password)
+    }
+
+    override fun onCleared() {
+        authManager.cleanup()
+        super.onCleared()
     }
 }
