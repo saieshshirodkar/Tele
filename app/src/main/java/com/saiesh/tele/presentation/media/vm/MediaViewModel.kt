@@ -29,7 +29,7 @@ class MediaViewModel(
             content is TdApi.MessageAnimation) {
             val currentState = _uiState.value
             val shouldAdd = if (currentState.isSavedMessagesSelected) {
-                message.chatId == repository.cachedSavedMessagesChatId
+                repository.cachedSavedMessagesChatId != null && message.chatId == repository.cachedSavedMessagesChatId
             } else {
                 message.chatId == currentState.selectedChatId
             }
@@ -52,7 +52,7 @@ class MediaViewModel(
         if (update.isPermanent) {
             val currentState = _uiState.value
             val shouldRemove = if (currentState.isSavedMessagesSelected) {
-                update.chatId == repository.cachedSavedMessagesChatId
+                repository.cachedSavedMessagesChatId != null && update.chatId == repository.cachedSavedMessagesChatId
             } else {
                 update.chatId == currentState.selectedChatId
             }
