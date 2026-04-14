@@ -13,7 +13,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.saiesh.tele.R
-import com.saiesh.tele.domain.model.auth.AuthStep
+import com.saiesh.tele.domain.model.AuthStep
 import com.saiesh.tele.presentation.auth.vm.AuthViewModel
 import kotlinx.coroutines.launch
 

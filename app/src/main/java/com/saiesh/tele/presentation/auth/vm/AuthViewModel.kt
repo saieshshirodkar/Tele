@@ -4,7 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.saiesh.tele.core.tdlib.auth.TelegramAuthManager
-import com.saiesh.tele.domain.model.auth.AuthUiState
+import com.saiesh.tele.domain.model.AuthUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update

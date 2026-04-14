@@ -1,4 +1,4 @@
-package com.saiesh.tele.data.cache.image
+package com.saiesh.tele.data.cache
 
 import android.graphics.Bitmap
 import android.util.LruCache

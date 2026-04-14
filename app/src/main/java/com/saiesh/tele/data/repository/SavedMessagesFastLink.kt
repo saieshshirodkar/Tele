@@ -1,10 +1,12 @@
-package com.saiesh.tele.data.repository.media
+package com.saiesh.tele.data.repository
 
 import com.saiesh.tele.core.tdlib.client.TdLibClient
-import com.saiesh.tele.domain.model.media.MediaItem
+import com.saiesh.tele.domain.model.MediaItem
 import org.drinkless.tdlib.TdApi
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+
+private val FAST_LINK_URL_REGEX = "https?://\\S+".toRegex()
 
 internal fun SavedMessagesRepository.requestFastLinkInternal(
     item: MediaItem,
@@ -74,22 +76,17 @@ internal fun SavedMessagesRepository.requestFastLinkInternal(
 }
 
 private fun extractFastDownloadLinkInternal(text: String): String? {
-    val lines = text.lineSequence().toList()
-
-    val fastLine = lines.firstOrNull { it.contains("Download Link:", ignoreCase = true) }
+    val fastLine = text.lineSequence().firstOrNull { it.contains("Download Link:", ignoreCase = true) }
     if (fastLine != null) {
-        val urlRegex = "https?://\\S+".toRegex()
-        urlRegex.find(fastLine)?.value?.trimEnd('.', ',', ')', ']', '>')?.let { return it }
+        FAST_LINK_URL_REGEX.find(fastLine)?.value?.trimEnd('.', ',', ')', ']', '>')?.let { return it }
     }
 
-    val downloadLine = lines.firstOrNull {
+    val downloadLine = text.lineSequence().firstOrNull {
         it.contains("Download", ignoreCase = true) && it.contains("http")
     }
     if (downloadLine != null) {
-        val urlRegex = "https?://\\S+".toRegex()
-        urlRegex.find(downloadLine)?.value?.trimEnd('.', ',', ')', ']', '>')?.let { return it }
+        FAST_LINK_URL_REGEX.find(downloadLine)?.value?.trimEnd('.', ',', ')', ']', '>')?.let { return it }
     }
 
-    val urlRegex = "https?://\\S+".toRegex()
-    return urlRegex.find(text)?.value?.trimEnd('.', ',', ')', ']', '>')
+    return FAST_LINK_URL_REGEX.find(text)?.value?.trimEnd('.', ',', ')', ']', '>')
 }

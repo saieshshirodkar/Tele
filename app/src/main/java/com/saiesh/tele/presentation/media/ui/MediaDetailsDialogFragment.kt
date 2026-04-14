@@ -9,7 +9,7 @@ import android.widget.TextView
 import androidx.core.os.BundleCompat
 import androidx.fragment.app.DialogFragment
 import com.saiesh.tele.R
-import com.saiesh.tele.domain.model.media.MediaItem
+import com.saiesh.tele.domain.model.MediaItem
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

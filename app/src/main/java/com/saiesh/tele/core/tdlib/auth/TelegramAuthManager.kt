@@ -6,8 +6,8 @@ import android.util.Log
 import com.saiesh.tele.BuildConfig
 import com.saiesh.tele.core.tdlib.client.TdLibClient
 import com.saiesh.tele.data.store.ApiCredentialsStore
-import com.saiesh.tele.domain.model.auth.AuthStep
-import com.saiesh.tele.domain.model.auth.AuthUiState
+import com.saiesh.tele.domain.model.AuthStep
+import com.saiesh.tele.domain.model.AuthUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update

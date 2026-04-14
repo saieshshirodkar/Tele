@@ -1,7 +1,7 @@
-package com.saiesh.tele.data.repository.media
+package com.saiesh.tele.data.repository
 
 import android.util.Log
-import com.saiesh.tele.domain.model.media.MediaItem
+import com.saiesh.tele.domain.model.MediaItem
 import org.drinkless.tdlib.TdApi
 
 internal fun SavedMessagesRepository.loadLatestMediaInternal(

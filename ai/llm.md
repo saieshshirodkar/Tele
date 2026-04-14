@@ -106,12 +106,11 @@ Tele is an Android TV application that allows users to browse and play videos, p
 | **app** | `/app/src/main/java/com/saiesh/tele/app/` | Application entry point (Application class, MainActivity) |
 | **core/tdlib** | `/app/src/main/java/com/saiesh/tele/core/tdlib/` | TDLib integration (Client wrapper, Auth manager) |
 | **data/cache** | `/app/src/main/java/com/saiesh/tele/data/cache/` | Caching layer (ImageCache) |
-| **data/repository** | `/app/src/main/java/com/saiesh/tele/data/repository/` | Data access (SavedMessagesRepository) |
+| **data/repository** | `/app/src/main/java/com/saiesh/tele/data/repository/` | Data access (SavedMessagesRepository and extension files) |
 | **data/store** | `/app/src/main/java/com/saiesh/tele/data/store/` | Local storage (SharedPreferences wrapper) |
-| **domain/model** | `/app/src/main/java/com/saiesh/tele/domain/model/` | Domain models (MediaItem, AuthState, Search models) |
+| **domain/model** | `/app/src/main/java/com/saiesh/tele/domain/model/` | Domain models (MediaModels, AuthUiState - flat structure) |
 | **presentation/auth** | `/app/src/main/java/com/saiesh/tele/presentation/auth/` | Auth UI (Fragment, ViewModel) |
 | **presentation/media** | `/app/src/main/java/com/saiesh/tele/presentation/media/` | Media browsing UI (BrowseFragment, Presenters, Dialogs) |
-| **presentation/search** | `/app/src/main/java/com/saiesh/tele/presentation/search/` | Search UI (Fragment, Adapter, ViewModel) |
 
 ### Key Classes and Responsibilities
 
@@ -127,7 +126,7 @@ Tele is an Android TV application that allows users to browse and play videos, p
 
 #### Data Layer
 
-- **SavedMessagesRepository** (`/app/src/main/java/com/saiesh/tele/data/repository/media/SavedMessagesRepository.kt`): Main repository class that delegates to internal extension functions for different operations (paging, search, thumbnails, etc.)
+- **SavedMessagesRepository** (`/app/src/main/java/com/saiesh/tele/data/repository/SavedMessagesRepository.kt`): Main repository class that delegates to internal extension functions for different operations (paging, search, thumbnails, etc.)
 - **ApiCredentialsStore** (`/app/src/main/java/com/saiesh/tele/data/store/ApiCredentialsStore.kt`): Simple SharedPreferences wrapper for storing API credentials securely
 
 #### Presentation Layer
@@ -228,44 +227,15 @@ The auth system follows TDLib's authorization state machine:
 | `SavedMessagesPaging.kt` | Paged loading of media from chat history |
 | `SavedMessagesChats.kt` | Loading chat list and Saved Messages chat resolution |
 | `SavedMessagesMediaSearch.kt` | Searching media within chats using filters |
-| `SavedMessagesSearch.kt` | Bot-based search functionality (ProSearchM11Bot) |
 | `SavedMessagesThumbnail.kt` | Thumbnail downloading and path resolution |
 | `SavedMessagesFastLink.kt` | Fast download link generation via FileToLinkV5Bot |
-| `SavedMessagesDelete.kt` | Message deletion functionality |
+| `SavedMessagesUtils.kt` | Utility functions (delete, thumbnail) |
 
 ### Domain Layer (Models)
 
-**MediaItem** (`/app/src/main/java/com/saiesh/tele/domain/model/media/MediaItem.kt`):
+**MediaModels** (`/app/src/main/java/com/saiesh/tele/domain/model/MediaModels.kt`): Combined file containing MediaType enum, MediaItem, MediaUiState, and VideoChatItem data classes.
 
-```kotlin
-data class MediaItem(
-    val chatId: Long,
-    val messageId: Long,
-    val date: Int,
-    val type: MediaType,  // Photo or Video
-    val title: String,
-    val fileId: Int?,
-    val thumbnailFileId: Int?,
-    val thumbnailPath: String?,
-    val miniThumbnailBytes: ByteArray?,
-    val thumbnailWidth: Int,
-    val thumbnailHeight: Int,
-    val durationSeconds: Int,
-    val fileSizeBytes: Long
-)
-```
-
-**VideoChatItem** (`/app/src/main/java/com/saiesh/tele/domain/model/media/VideoChatItem.kt`):
-
-```kotlin
-data class VideoChatItem(
-    val chatId: Long,
-    val title: String,
-    val isSavedMessages: Boolean
-)
-```
-
-**AuthUiState** (`/app/src/main/java/com/saiesh/tele/domain/model/auth/AuthUiState.kt`):
+**AuthUiState** (`/app/src/main/java/com/saiesh/tele/domain/model/AuthUiState.kt`):
 
 ```kotlin
 data class AuthUiState(
@@ -279,11 +249,6 @@ data class AuthUiState(
     val isLoading: Boolean = false
 )
 ```
-
-**Search Models** (`/app/src/main/java/com/saiesh/tele/domain/model/search/SearchModels.kt`):
-- `SearchQueryResult`: Represents a search result with callback data
-- `SearchUiState`: Search screen state
-- `SearchBotResponse`: Sealed class for bot response types (Results, Media, Error)
 
 ---
 
@@ -546,55 +511,38 @@ The released APK:
 │       │   │   └── auth/
 │       │   │       └── TelegramAuthManager.kt  # Auth manager
 │       │   ├── data/
-│       │   │   ├── cache/image/
+│       │   │   ├── cache/
 │       │   │   │   └── ImageCache.kt     # LRU image cache
-│       │   │   ├── repository/media/     # Repository implementations
+│       │   │   ├── repository/           # Repository implementations (flattened)
 │       │   │   │   ├── SavedMessagesRepository.kt
 │       │   │   │   ├── SavedMessagesMediaMapper.kt
 │       │   │   │   ├── SavedMessagesPaging.kt
 │       │   │   │   ├── SavedMessagesChats.kt
 │       │   │   │   ├── SavedMessagesMediaSearch.kt
-│       │   │   │   ├── SavedMessagesSearch.kt
 │       │   │   │   ├── SavedMessagesThumbnail.kt
 │       │   │   │   ├── SavedMessagesFastLink.kt
-│       │   │   │   └── SavedMessagesDelete.kt
+│       │   │   │   └── SavedMessagesUtils.kt
 │       │   │   └── store/
 │       │   │       └── ApiCredentialsStore.kt  # SharedPreferences wrapper
-│       │   ├── domain/model/
-│       │   │   ├── auth/
-│       │   │   │   ├── AuthStep.kt       # Auth state enum
-│       │   │   │   └── AuthUiState.kt    # Auth UI state
-│       │   │   ├── media/
-│       │   │   │   ├── MediaItem.kt      # Media domain model
-│       │   │   │   ├── MediaType.kt      # Photo/Video enum
-│       │   │   │   ├── MediaUiState.kt   # Media UI state
-│       │   │   │   └── VideoChatItem.kt  # Chat domain model
-│       │   │   └── search/
-│       │   │       └── SearchModels.kt   # Search models
+│       │   ├── domain/model/             # Domain models (flat structure)
+│       │   │   ├── MediaModels.kt        # Combined: MediaType, MediaItem, MediaUiState, VideoChatItem
+│       │   │   └── AuthUiState.kt        # Auth UI state
 │       │   └── presentation/
 │       │       ├── auth/
 │       │       │   ├── ui/
 │       │       │   │   └── AuthFragment.kt
 │       │       │   └── vm/
 │       │       │       └── AuthViewModel.kt
-│       │       ├── media/
-│       │       │   ├── ui/
-│       │       │   │   ├── BrowseFragment.kt
-│       │       │   │   ├── MediaContextMenuDialogFragment.kt
-│       │       │   │   ├── MediaDetailsDialogFragment.kt
-│       │       │   │   └── ConfirmDeleteDialogFragment.kt
-│       │       │   ├── presenter/
-│       │       │   │   ├── MediaCardPresenter.kt
-│       │       │   │   └── VideoChatPresenter.kt
-│       │       │   └── vm/
-│       │       │       └── MediaViewModel.kt
-│       │       └── search/
+│       │       └── media/
 │       │           ├── ui/
-│       │           │   └── SearchFragment.kt
-│       │           ├── adapter/
-│       │           │   └── SearchResultsAdapter.kt
+│       │           │   ├── BrowseFragment.kt
+│       │           │   ├── MediaDialogs.kt  # Combined context menu and delete dialogs
+│       │           │   └── MediaDetailsDialogFragment.kt
+│       │           ├── presenter/
+│       │           │   ├── MediaCardPresenter.kt
+│       │           │   └── VideoChatPresenter.kt
 │       │           └── vm/
-│       │               └── SearchViewModel.kt
+│       │               └── MediaViewModel.kt
 │       ├── java/org/drinkless/tdlib/     # TDLib Java bindings
 │       │   ├── Client.java
 │       │   └── TdApi.java
@@ -645,7 +593,7 @@ The released APK:
 | Main Activity | `app/src/main/java/com/saiesh/tele/app/MainActivity.kt` |
 | Authentication Manager | `app/src/main/java/com/saiesh/tele/core/tdlib/auth/TelegramAuthManager.kt` |
 | TDLib Client | `app/src/main/java/com/saiesh/tele/core/tdlib/client/TdLibClient.kt` |
-| Main Repository | `app/src/main/java/com/saiesh/tele/data/repository/media/SavedMessagesRepository.kt` |
+| Main Repository | `app/src/main/java/com/saiesh/tele/data/repository/SavedMessagesRepository.kt` |
 | API Key Storage | `app/src/main/java/com/saiesh/tele/data/store/ApiCredentialsStore.kt` |
 | Media UI | `app/src/main/java/com/saiesh/tele/presentation/media/ui/BrowseFragment.kt` |
 | Auth UI | `app/src/main/java/com/saiesh/tele/presentation/auth/ui/AuthFragment.kt` |
@@ -670,6 +618,6 @@ License:            MIT
 
 ---
 
-**Last Updated:** 2026-01-31
+**Last Updated:** 2026-04-15
 
 This documentation provides complete context about the Tele Android TV app. For questions or issues, refer to the README.md or contact the author.

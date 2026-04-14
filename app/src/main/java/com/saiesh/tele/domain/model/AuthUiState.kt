@@ -1,4 +1,4 @@
-package com.saiesh.tele.domain.model.auth
+package com.saiesh.tele.domain.model
 
 enum class AuthStep {
     Loading,

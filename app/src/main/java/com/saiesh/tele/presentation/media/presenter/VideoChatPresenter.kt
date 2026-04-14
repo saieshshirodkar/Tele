@@ -7,7 +7,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.leanback.widget.Presenter
 import com.saiesh.tele.R
-import com.saiesh.tele.domain.model.media.VideoChatItem
+import com.saiesh.tele.domain.model.VideoChatItem
 
 class VideoChatPresenter : Presenter() {
     override fun onCreateViewHolder(parent: ViewGroup): Presenter.ViewHolder {

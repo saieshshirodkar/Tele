@@ -1,8 +1,8 @@
-package com.saiesh.tele.data.repository.media
+package com.saiesh.tele.data.repository
 
 import android.util.Log
-import com.saiesh.tele.domain.model.media.MediaType
-import com.saiesh.tele.domain.model.media.VideoChatItem
+import com.saiesh.tele.domain.model.MediaType
+import com.saiesh.tele.domain.model.VideoChatItem
 import org.drinkless.tdlib.TdApi
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -108,7 +108,7 @@ internal fun SavedMessagesRepository.resolveSavedMessagesChatInternal(
 internal fun SavedMessagesRepository.loadSavedMessagesChatInternal(
     userId: Long,
     limit: Int,
-    onResult: (List<com.saiesh.tele.domain.model.media.MediaItem>, String?) -> Unit
+    onResult: (List<com.saiesh.tele.domain.model.MediaItem>, String?) -> Unit
 ) {
     client.send(TdApi.CreatePrivateChat(userId, false)) { chatResult ->
         when (chatResult) {
@@ -129,19 +129,19 @@ private fun SavedMessagesRepository.hasVideoInChatInternal(chatId: Long, onResul
     )
     val pending = AtomicInteger(filters.size)
     val found = AtomicBoolean(false)
-    var completed = false
+    val completed = AtomicBoolean(false)
 
     fun finish() {
-        if (completed) return
-        if (found.get() || pending.decrementAndGet() == 0) {
-            completed = true
+        if (completed.get()) return
+        val done = found.get() || pending.decrementAndGet() == 0
+        if (done && completed.compareAndSet(false, true)) {
             onResult(found.get())
         }
     }
 
     filters.forEach { filter ->
         searchWithFilterInternal(chatId, 1, null, filter) { items ->
-            if (!completed && items.any { it.type == MediaType.Video }) {
+            if (!completed.get() && items.any { it.type == MediaType.Video }) {
                 found.set(true)
             }
             finish()

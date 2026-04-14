@@ -78,12 +78,11 @@ PACKAGE STRUCTURE:
 | app | /app/src/main/java/com/saiesh/tele/app/ | Application entry point |
 | core/tdlib | /app/src/main/java/com/saiesh/tele/core/tdlib/ | TDLib integration |
 | data/cache | /app/src/main/java/com/saiesh/tele/data/cache/ | Caching layer |
-| data/repository | /app/src/main/java/com/saiesh/tele/data/repository/ | Data access |
+| data/repository | /app/src/main/java/com/saiesh/tele/data/repository/ | Data access (flattened) |
 | data/store | /app/src/main/java/com/saiesh/tele/data/store/ | Local storage |
-| domain/model | /app/src/main/java/com/saiesh/tele/domain/model/ | Domain models |
+| domain/model | /app/src/main/java/com/saiesh/tele/domain/model/ | Domain models (flat structure) |
 | presentation/auth | /app/src/main/java/com/saiesh/tele/presentation/auth/ | Auth UI |
 | presentation/media | /app/src/main/java/com/saiesh/tele/presentation/media/ | Media browsing UI |
-| presentation/search | /app/src/main/java/com/saiesh/tele/presentation/search/ | Search UI |
 
 KEY CLASSES AND RESPONSIBILITIES:
 
@@ -166,32 +165,17 @@ SavedMessagesRepository is split into extension files:
 - SavedMessagesPaging.kt: Paged loading of media
 - SavedMessagesChats.kt: Loading chat list
 - SavedMessagesMediaSearch.kt: Searching media within chats
-- SavedMessagesSearch.kt: Bot-based search functionality
 - SavedMessagesThumbnail.kt: Thumbnail downloading
 - SavedMessagesFastLink.kt: Fast download link generation
-- SavedMessagesDelete.kt: Message deletion
+- SavedMessagesUtils.kt: Utility functions (delete, thumbnail)
 
 DOMAIN MODELS:
 
-MediaItem (data class):
-- chatId: Long
-- messageId: Long
-- date: Int
-- type: MediaType (Photo or Video)
-- title: String
-- fileId: Int?
-- thumbnailFileId: Int?
-- thumbnailPath: String?
-- miniThumbnailBytes: ByteArray?
-- thumbnailWidth: Int
-- thumbnailHeight: Int
-- durationSeconds: Int
-- fileSizeBytes: Long
-
-VideoChatItem (data class):
-- chatId: Long
-- title: String
-- isSavedMessages: Boolean
+MediaModels.kt (combined file):
+- MediaType enum: Photo or Video
+- MediaItem data class: chatId, messageId, date, type, title, fileId, thumbnailFileId, thumbnailPath, miniThumbnailBytes, thumbnailWidth, thumbnailHeight, durationSeconds, fileSizeBytes
+- MediaUiState data class: items, isLoading, error, selectedChatTitle, selectedChatId, isSavedMessagesSelected, isLoadingMore, hasMore, nextFromMessageId, videoChats, isSidebarLoading, sidebarError
+- VideoChatItem data class: chatId, title, isSavedMessages, isSelected
 
 AuthUiState (data class):
 - apiId: String
@@ -451,55 +435,38 @@ FILE STRUCTURE
 │       │   │   └── auth/
 │       │   │       └── TelegramAuthManager.kt  # Auth manager
 │       │   ├── data/
-│       │   │   ├── cache/image/
+│       │   │   ├── cache/
 │       │   │   │   └── ImageCache.kt     # LRU image cache
-│       │   │   ├── repository/media/     # Repository implementations
+│       │   │   ├── repository/           # Repository implementations (flattened)
 │       │   │   │   ├── SavedMessagesRepository.kt
 │       │   │   │   ├── SavedMessagesMediaMapper.kt
 │       │   │   │   ├── SavedMessagesPaging.kt
 │       │   │   │   ├── SavedMessagesChats.kt
 │       │   │   │   ├── SavedMessagesMediaSearch.kt
-│       │   │   │   ├── SavedMessagesSearch.kt
 │       │   │   │   ├── SavedMessagesThumbnail.kt
 │       │   │   │   ├── SavedMessagesFastLink.kt
-│       │   │   │   └── SavedMessagesDelete.kt
+│       │   │   │   └── SavedMessagesUtils.kt
 │       │   │   └── store/
 │       │   │       └── ApiCredentialsStore.kt  # SharedPreferences wrapper
-│       │   ├── domain/model/
-│       │   │   ├── auth/
-│       │   │   │   ├── AuthStep.kt       # Auth state enum
-│       │   │   │   └── AuthUiState.kt    # Auth UI state
-│       │   │   ├── media/
-│       │   │   │   ├── MediaItem.kt      # Media domain model
-│       │   │   │   ├── MediaType.kt      # Photo/Video enum
-│       │   │   │   ├── MediaUiState.kt   # Media UI state
-│       │   │   │   └── VideoChatItem.kt  # Chat domain model
-│       │   │   └── search/
-│       │   │       └── SearchModels.kt   # Search models
+│       │   ├── domain/model/             # Domain models (flat structure)
+│       │   │   ├── MediaModels.kt        # Combined: MediaType, MediaItem, MediaUiState, VideoChatItem
+│       │   │   └── AuthUiState.kt        # Auth UI state
 │       │   └── presentation/
 │       │       ├── auth/
 │       │       │   ├── ui/
 │       │       │   │   └── AuthFragment.kt
 │       │       │   └── vm/
 │       │       │       └── AuthViewModel.kt
-│       │       ├── media/
-│       │       │   ├── ui/
-│       │       │   │   ├── BrowseFragment.kt
-│       │       │   │   ├── MediaContextMenuDialogFragment.kt
-│       │       │   │   ├── MediaDetailsDialogFragment.kt
-│       │       │   │   └── ConfirmDeleteDialogFragment.kt
-│       │       │   ├── presenter/
-│       │       │   │   ├── MediaCardPresenter.kt
-│       │       │   │   └── VideoChatPresenter.kt
-│       │       │   └── vm/
-│       │       │       └── MediaViewModel.kt
-│       │       └── search/
+│       │       └── media/
 │       │           ├── ui/
-│       │           │   └── SearchFragment.kt
-│       │           ├── adapter/
-│       │           │   └── SearchResultsAdapter.kt
+│       │           │   ├── BrowseFragment.kt
+│       │           │   ├── MediaDialogs.kt  # Combined context menu and delete dialogs
+│       │           │   └── MediaDetailsDialogFragment.kt
+│       │           ├── presenter/
+│       │           │   ├── MediaCardPresenter.kt
+│       │           │   └── VideoChatPresenter.kt
 │       │           └── vm/
-│       │               └── SearchViewModel.kt
+│       │               └── MediaViewModel.kt
 │       ├── java/org/drinkless/tdlib/     # TDLib Java bindings
 │       │   ├── Client.java
 │       │   └── TdApi.java
@@ -566,4 +533,4 @@ END OF DOCUMENTATION
 This documentation provides complete context about the Tele Android TV app.
 For questions or issues, refer to the README.md or contact the author.
 
-Last Updated: 2026-01-31
+Last Updated: 2026-04-15

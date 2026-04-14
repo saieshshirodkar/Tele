@@ -1,7 +1,22 @@
-package com.saiesh.tele.data.repository.media
+package com.saiesh.tele.data.repository
 
 import com.saiesh.tele.core.tdlib.client.TdLibClient
 import org.drinkless.tdlib.TdApi
+import java.util.concurrent.atomic.AtomicBoolean
+
+internal fun SavedMessagesRepository.deleteMessageInternal(
+    chatId: Long,
+    messageId: Long,
+    onResult: (String?) -> Unit
+) {
+    client.send(TdApi.DeleteMessages(chatId, longArrayOf(messageId), true)) { result ->
+        when (result) {
+            is TdApi.Ok -> onResult(null)
+            is TdApi.Error -> onResult(result.message)
+            else -> onResult("Failed to delete message")
+        }
+    }
+}
 
 internal fun SavedMessagesRepository.fetchThumbnailPathInternal(
     fileId: Int,
@@ -15,7 +30,7 @@ internal fun SavedMessagesRepository.fetchThumbnailPathInternal(
             onResult(existingPath)
             return@send
         }
-        val completed = java.util.concurrent.atomic.AtomicBoolean(false)
+        val completed = AtomicBoolean(false)
         lateinit var updateHandler: (TdApi.Object?) -> Unit
 
         updateHandler = updateHandler@{ update ->

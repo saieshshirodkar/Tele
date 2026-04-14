@@ -8,9 +8,9 @@ import androidx.leanback.widget.Presenter
 import com.bumptech.glide.Glide
 import java.io.File
 import com.saiesh.tele.R
-import com.saiesh.tele.data.cache.image.ImageCache
-import com.saiesh.tele.domain.model.media.MediaItem
-import com.saiesh.tele.domain.model.media.MediaType
+import com.saiesh.tele.data.cache.ImageCache
+import com.saiesh.tele.domain.model.MediaItem
+import com.saiesh.tele.domain.model.MediaType
 
 class MediaCardPresenter(
     private val onLongPress: (MediaItem) -> Unit

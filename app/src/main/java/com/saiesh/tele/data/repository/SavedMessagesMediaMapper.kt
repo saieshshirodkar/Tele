@@ -1,7 +1,7 @@
-package com.saiesh.tele.data.repository.media
+package com.saiesh.tele.data.repository
 
-import com.saiesh.tele.domain.model.media.MediaItem
-import com.saiesh.tele.domain.model.media.MediaType
+import com.saiesh.tele.domain.model.MediaItem
+import com.saiesh.tele.domain.model.MediaType
 import org.drinkless.tdlib.TdApi
 
 internal fun SavedMessagesRepository.mapMessageToMediaInternal(message: TdApi.Message): MediaItem? {

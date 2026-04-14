@@ -26,9 +26,9 @@ import androidx.leanback.widget.OnItemViewClickedListener
 import androidx.leanback.widget.OnItemViewSelectedListener
 import com.saiesh.tele.R
 import com.saiesh.tele.app.MainActivity
-import com.saiesh.tele.domain.model.media.MediaItem
-import com.saiesh.tele.domain.model.media.MediaType
-import com.saiesh.tele.domain.model.media.VideoChatItem
+import com.saiesh.tele.domain.model.MediaItem
+import com.saiesh.tele.domain.model.MediaType
+import com.saiesh.tele.domain.model.VideoChatItem
 import com.saiesh.tele.presentation.media.presenter.MediaCardPresenter
 import com.saiesh.tele.presentation.media.presenter.VideoChatPresenter
 import com.saiesh.tele.presentation.media.vm.MediaViewModel

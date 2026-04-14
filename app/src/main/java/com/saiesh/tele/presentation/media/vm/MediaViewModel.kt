@@ -3,9 +3,9 @@ package com.saiesh.tele.presentation.media.vm
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.saiesh.tele.core.tdlib.client.TdLibClient
-import com.saiesh.tele.data.repository.media.SavedMessagesRepository
-import com.saiesh.tele.domain.model.media.MediaItem
-import com.saiesh.tele.domain.model.media.MediaUiState
+import com.saiesh.tele.data.repository.SavedMessagesRepository
+import com.saiesh.tele.domain.model.MediaItem
+import com.saiesh.tele.domain.model.MediaUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update

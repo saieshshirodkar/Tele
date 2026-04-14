@@ -1,6 +1,6 @@
-package com.saiesh.tele.data.repository.media
+package com.saiesh.tele.data.repository
 
-import com.saiesh.tele.domain.model.media.MediaItem
+import com.saiesh.tele.domain.model.MediaItem
 import org.drinkless.tdlib.TdApi
 import java.util.concurrent.atomic.AtomicInteger
 
