@@ -3,18 +3,25 @@ package com.saiesh.tele.data.repository
 import com.saiesh.tele.core.tdlib.client.TdLibClient
 import com.saiesh.tele.domain.model.MediaItem
 import org.drinkless.tdlib.TdApi
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 private val FAST_LINK_URL_REGEX = "https?://\\S+".toRegex()
+private val pendingFastLinks = ConcurrentHashMap<Long, Boolean>()
 
 internal fun SavedMessagesRepository.requestFastLinkInternal(
     item: MediaItem,
     onResult: (String?, String?) -> Unit
 ) {
+    if (pendingFastLinks.putIfAbsent(item.messageId, true) != null) {
+        onResult(null, "Already requesting link for this item")
+        return
+    }
     client.send(TdApi.SearchPublicChat(BOT_USERNAME)) searchBot@{ chatResult ->
         val botChat = chatResult as? TdApi.Chat
         if (botChat == null) {
+            pendingFastLinks.remove(item.messageId)
             val error = (chatResult as? TdApi.Error)?.message ?: "Bot chat not found"
             onResult(null, error)
             return@searchBot
@@ -33,6 +40,7 @@ internal fun SavedMessagesRepository.requestFastLinkInternal(
                 ?.messages
                 ?.firstOrNull()
             if (forwardedMessage == null) {
+                pendingFastLinks.remove(item.messageId)
                 val error = (forwardResult as? TdApi.Error)?.message ?: "Failed to forward message"
                 onResult(null, error)
                 return@forwardMessage
@@ -43,6 +51,7 @@ internal fun SavedMessagesRepository.requestFastLinkInternal(
 
             val timeoutFuture = handlerScheduler.schedule({
                 if (completed.compareAndSet(false, true)) {
+                    pendingFastLinks.remove(item.messageId)
                     TdLibClient.removeUpdateHandler(updateHandler)
                     onResult(null, "Bot did not respond in time")
                 }
@@ -63,6 +72,7 @@ internal fun SavedMessagesRepository.requestFastLinkInternal(
                 if (isDirectReply || containsLink) {
                     val link = extractFastDownloadLinkInternal(text)
                     if (link != null && completed.compareAndSet(false, true)) {
+                        pendingFastLinks.remove(item.messageId)
                         timeoutFuture.cancel(false)
                         TdLibClient.removeUpdateHandler(updateHandler)
                         onResult(link, null)

@@ -1,6 +1,5 @@
 package com.saiesh.tele.data.repository
 
-import android.util.Log
 import com.saiesh.tele.core.tdlib.client.TdLibClient
 import com.saiesh.tele.domain.model.MediaItem
 import com.saiesh.tele.domain.model.VideoChatItem

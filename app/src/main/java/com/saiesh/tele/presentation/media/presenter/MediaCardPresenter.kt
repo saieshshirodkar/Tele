@@ -1,5 +1,6 @@
 package com.saiesh.tele.presentation.media.presenter
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.TypedValue
 import android.view.ViewGroup
@@ -9,6 +10,7 @@ import com.bumptech.glide.Glide
 import java.io.File
 import com.saiesh.tele.R
 import com.saiesh.tele.data.cache.ImageCache
+import com.saiesh.tele.data.repository.formatDuration
 import com.saiesh.tele.domain.model.MediaItem
 import com.saiesh.tele.domain.model.MediaType
 
@@ -52,11 +54,7 @@ class MediaCardPresenter(
         when {
             !media.thumbnailPath.isNullOrBlank() -> {
                 imageView?.let { target ->
-                    val miniBitmap = if (media.miniThumbnailBytes != null) {
-                        ImageCache.getMini(media.messageId)
-                            ?: BitmapFactory.decodeByteArray(media.miniThumbnailBytes, 0, media.miniThumbnailBytes.size)
-                                ?.also { decoded -> ImageCache.putMini(media.messageId, decoded) }
-                    } else null
+                    val miniBitmap = getOrDecodeMiniThumbnail(media.messageId, media.miniThumbnailBytes)
 
                     Glide.with(cardView)
                         .load(File(media.thumbnailPath!!))
@@ -73,9 +71,7 @@ class MediaCardPresenter(
                 }
             }
             media.miniThumbnailBytes != null -> {
-                val bitmap = ImageCache.getMini(media.messageId)
-                    ?: BitmapFactory.decodeByteArray(media.miniThumbnailBytes, 0, media.miniThumbnailBytes.size)
-                        ?.also { decoded -> ImageCache.putMini(media.messageId, decoded) }
+                val bitmap = getOrDecodeMiniThumbnail(media.messageId, media.miniThumbnailBytes)
                 if (bitmap != null) {
                     imageView?.setImageBitmap(bitmap)
                 } else {
@@ -88,6 +84,13 @@ class MediaCardPresenter(
         }
     }
 
+    private fun getOrDecodeMiniThumbnail(messageId: Long, bytes: ByteArray?): Bitmap? {
+        if (bytes == null) return null
+        return ImageCache.getMini(messageId)
+            ?: BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                ?.also { decoded -> ImageCache.putMini(messageId, decoded) }
+    }
+
     override fun onUnbindViewHolder(viewHolder: Presenter.ViewHolder) {
         val cardView = viewHolder.view as ImageCardView
         cardView.mainImageView?.let { imageView ->
@@ -96,10 +99,4 @@ class MediaCardPresenter(
         cardView.mainImage = null
     }
 
-    private fun formatDuration(totalSeconds: Int): String {
-        val hours = totalSeconds / 3600
-        val minutes = (totalSeconds % 3600) / 60
-        val seconds = totalSeconds % 60
-        return String.format("%02dh%02dm%02ds", hours, minutes, seconds)
-    }
 }

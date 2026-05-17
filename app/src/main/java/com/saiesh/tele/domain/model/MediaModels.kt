@@ -2,6 +2,8 @@ package com.saiesh.tele.domain.model
 
 import java.io.Serializable
 
+const val SAVED_MESSAGES_TITLE = "Saved Messages"
+
 enum class MediaType {
     Photo,
     Video

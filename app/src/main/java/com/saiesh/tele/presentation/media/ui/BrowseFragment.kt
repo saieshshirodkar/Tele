@@ -10,8 +10,6 @@ import android.text.Spanned
 import android.text.style.StyleSpan
 import android.widget.TextView
 import android.widget.Toast
-import androidx.core.content.ContextCompat
-import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -25,7 +23,6 @@ import androidx.leanback.widget.ListRowPresenter
 import androidx.leanback.widget.OnItemViewClickedListener
 import androidx.leanback.widget.OnItemViewSelectedListener
 import com.saiesh.tele.R
-import com.saiesh.tele.app.MainActivity
 import com.saiesh.tele.domain.model.MediaItem
 import com.saiesh.tele.domain.model.MediaType
 import com.saiesh.tele.domain.model.VideoChatItem
@@ -81,13 +78,9 @@ class BrowseFragment : BrowseSupportFragment(),
         setupListeners()
     }
 
-    override fun onResume() {
-        super.onResume()
-        mediaViewModel.initialize()
-    }
-
     override fun onViewCreated(view: android.view.View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        mediaViewModel.initialize()
         observeState()
     }
 
@@ -175,8 +168,10 @@ class BrowseFragment : BrowseSupportFragment(),
         if (item.type != MediaType.Video || item.fileId == null) {
             return
         }
+        if (!isAdded) return
         Toast.makeText(requireContext(), "Fetching fast link...", Toast.LENGTH_SHORT).show()
         mediaViewModel.requestFastLink(item) { url, error ->
+            if (!isAdded) return@requestFastLink
             if (url.isNullOrBlank()) {
                 Toast.makeText(
                     requireContext(),

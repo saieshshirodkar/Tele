@@ -113,14 +113,14 @@ internal fun SavedMessagesRepository.mapMessageToMediaInternal(message: TdApi.Me
     }
 }
 
+private val VIDEO_EXTENSIONS = setOf(
+    ".mkv", ".mp4", ".mov", ".webm", ".avi", ".m4v", ".mpeg", ".mpg",
+    ".wmv", ".flv", ".3gp", ".3g2", ".ts", ".m2ts", ".mxf", ".f4v",
+    ".vob", ".ogv", ".rm", ".rmvb"
+)
+
 internal fun isVideoDocumentInternal(document: TdApi.Document?): Boolean {
     val mime = document?.mimeType?.lowercase()?.trim().orEmpty()
     val fileName = document?.fileName?.lowercase()?.trim().orEmpty()
-    return mime.startsWith("video/") || fileName.endsWith(".mkv") || fileName.endsWith(".mp4") ||
-        fileName.endsWith(".mov") || fileName.endsWith(".webm") || fileName.endsWith(".avi") ||
-        fileName.endsWith(".m4v") || fileName.endsWith(".mpeg") || fileName.endsWith(".mpg") ||
-        fileName.endsWith(".wmv") || fileName.endsWith(".flv") || fileName.endsWith(".3gp") ||
-        fileName.endsWith(".3g2") || fileName.endsWith(".ts") || fileName.endsWith(".m2ts") ||
-        fileName.endsWith(".mxf") || fileName.endsWith(".f4v") || fileName.endsWith(".vob") ||
-        fileName.endsWith(".ogv") || fileName.endsWith(".rm") || fileName.endsWith(".rmvb")
+    return mime.startsWith("video/") || VIDEO_EXTENSIONS.any { fileName.endsWith(it) }
 }

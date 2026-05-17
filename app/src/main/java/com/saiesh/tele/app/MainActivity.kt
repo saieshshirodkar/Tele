@@ -57,33 +57,34 @@ class MainActivity : FragmentActivity() {
         }
     }
 
+    private var exitCallback: OnBackPressedCallback? = null
+
     private fun setupExitHandler() {
+        if (exitCallback != null) return
         var waitingForExit = false
         val handler = Handler(Looper.getMainLooper())
-        onBackPressedDispatcher.addCallback(
-            this,
-            object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    val fragment = supportFragmentManager.findFragmentById(R.id.main_browse_fragment)
-                    if (fragment is com.saiesh.tele.presentation.media.ui.BrowseFragment) {
-                        if (fragment.isShowingHeaders()) {
-                            if (waitingForExit) {
-                                finish()
-                                return
-                            }
-                            waitingForExit = true
-                            Toast.makeText(this@MainActivity, "Press back again to exit", Toast.LENGTH_SHORT)
-                                .show()
-                            handler.removeCallbacksAndMessages(null)
-                            handler.postDelayed({ waitingForExit = false }, 2000)
+        exitCallback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val fragment = supportFragmentManager.findFragmentById(R.id.main_browse_fragment)
+                if (fragment is com.saiesh.tele.presentation.media.ui.BrowseFragment) {
+                    if (fragment.isShowingHeaders()) {
+                        if (waitingForExit) {
+                            finish()
                             return
                         }
+                        waitingForExit = true
+                        Toast.makeText(this@MainActivity, "Press back again to exit", Toast.LENGTH_SHORT)
+                            .show()
+                        handler.removeCallbacksAndMessages(null)
+                        handler.postDelayed({ waitingForExit = false }, 2000)
+                        return
                     }
-                    isEnabled = false
-                    onBackPressedDispatcher.onBackPressed()
-                    isEnabled = true
                 }
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+                isEnabled = true
             }
-        )
+        }
+        onBackPressedDispatcher.addCallback(this, exitCallback!!)
     }
 }

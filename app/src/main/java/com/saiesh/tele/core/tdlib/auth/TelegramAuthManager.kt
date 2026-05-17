@@ -24,9 +24,16 @@ class TelegramAuthManager(private val context: Context) {
     private val client = TdLibClient.client
     private val credentialsStore = ApiCredentialsStore(context)
 
+    private var updateHandlerRef: ((TdApi.Object?) -> Unit)? = null
+    private var errorHandlerRef: ((Throwable?) -> Unit)? = null
+
     init {
-        TdLibClient.addUpdateHandler(::handleUpdate)
-        TdLibClient.addErrorHandler(::handleError)
+        val updateHandler: (TdApi.Object?) -> Unit = ::handleUpdate
+        val errorHandler: (Throwable?) -> Unit = ::handleError
+        updateHandlerRef = updateHandler
+        errorHandlerRef = errorHandler
+        TdLibClient.addUpdateHandler(updateHandler)
+        TdLibClient.addErrorHandler(errorHandler)
         client.send(TdApi.GetAuthorizationState()) { result ->
             when (result) {
                 is TdApi.AuthorizationState -> handleAuthState(result)
@@ -35,25 +42,13 @@ class TelegramAuthManager(private val context: Context) {
         }
     }
 
-    fun submitPhone(phone: String) {
-        _uiState.update { it.copy(isLoading = true, message = null) }
-        client.send(TdApi.SetAuthenticationPhoneNumber(phone, null)) { result ->
-            handleResult(result)
-        }
-    }
+    fun submitPhone(phone: String) = submitAction(TdApi.SetAuthenticationPhoneNumber(phone, null))
+    fun submitCode(code: String) = submitAction(TdApi.CheckAuthenticationCode(code))
+    fun submitPassword(password: String) = submitAction(TdApi.CheckAuthenticationPassword(password))
 
-    fun submitCode(code: String) {
+    private fun submitAction(request: TdApi.Function<*>) {
         _uiState.update { it.copy(isLoading = true, message = null) }
-        client.send(TdApi.CheckAuthenticationCode(code)) { result ->
-            handleResult(result)
-        }
-    }
-
-    fun submitPassword(password: String) {
-        _uiState.update { it.copy(isLoading = true, message = null) }
-        client.send(TdApi.CheckAuthenticationPassword(password)) { result ->
-            handleResult(result)
-        }
+        client.send(request) { result -> handleResult(result) }
     }
 
     fun submitApiKeys(apiId: String, apiHash: String) {
@@ -165,7 +160,9 @@ class TelegramAuthManager(private val context: Context) {
     }
 
     fun cleanup() {
-        TdLibClient.removeUpdateHandler(::handleUpdate)
-        TdLibClient.removeErrorHandler(::handleError)
+        updateHandlerRef?.let { TdLibClient.removeUpdateHandler(it) }
+        errorHandlerRef?.let { TdLibClient.removeErrorHandler(it) }
+        updateHandlerRef = null
+        errorHandlerRef = null
     }
 }

@@ -4,6 +4,9 @@ import android.util.Log
 import com.saiesh.tele.domain.model.MediaItem
 import org.drinkless.tdlib.TdApi
 
+internal fun List<MediaItem>.dedupeAndSort(): List<MediaItem> =
+    distinctBy { it.messageId }.sortedByDescending { it.date }
+
 internal fun SavedMessagesRepository.loadLatestMediaInternal(
     limit: Int,
     onResult: (List<MediaItem>, String?) -> Unit
@@ -62,6 +65,8 @@ internal fun SavedMessagesRepository.loadChatMediaPagedInternal(
     loadMediaFromHistoryInternal(chatId, limit, fromMessageId, onResult)
 }
 
+private const val MAX_HISTORY_PAGES = 20
+
 private fun SavedMessagesRepository.loadMediaFromHistoryInternal(
     chatId: Long,
     limit: Int,
@@ -69,16 +74,22 @@ private fun SavedMessagesRepository.loadMediaFromHistoryInternal(
     onResult: (List<MediaItem>, Long, String?) -> Unit
 ) {
     val collected = mutableListOf<MediaItem>()
+    var pagesFetched = 0
 
     fun finish(nextFromMessageId: Long, error: String? = null) {
-        val ordered = collected
-            .distinctBy { it.messageId }
-            .sortedByDescending { it.date }
+        val ordered = collected.dedupeAndSort()
         val page = ordered.take(limit)
         onResult(page, nextFromMessageId, error)
     }
 
     fun fetch(nextFromId: Long) {
+        if (pagesFetched >= MAX_HISTORY_PAGES) {
+            val ordered = collected.dedupeAndSort()
+            val next = ordered.take(limit).lastOrNull()?.messageId ?: 0L
+            finish(next)
+            return
+        }
+        pagesFetched++
         val query = TdApi.GetChatHistory(chatId, nextFromId, 0, 100, false)
         client.send(query) { result ->
             when (result) {
@@ -102,9 +113,7 @@ private fun SavedMessagesRepository.loadMediaFromHistoryInternal(
                         collected.add(media)
                     }
                     if (collected.size >= limit) {
-                        val ordered = collected
-                            .distinctBy { it.messageId }
-                            .sortedByDescending { it.date }
+                        val ordered = collected.dedupeAndSort()
                         val nextFromMessageId = ordered
                             .take(limit)
                             .lastOrNull()

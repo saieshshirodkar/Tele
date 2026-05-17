@@ -1,10 +1,10 @@
 package com.saiesh.tele.data.repository
 
 import android.util.Log
+import com.saiesh.tele.domain.model.SAVED_MESSAGES_TITLE
 import com.saiesh.tele.domain.model.MediaType
 import com.saiesh.tele.domain.model.VideoChatItem
 import org.drinkless.tdlib.TdApi
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 internal fun SavedMessagesRepository.loadVideoChatsInternal(
@@ -40,7 +40,7 @@ internal fun SavedMessagesRepository.loadVideoChatsInternal(
             chatIds.forEach { chatId ->
                 client.send(TdApi.GetChat(chatId)) chatSend@{ chatResult ->
                     val chat = chatResult as? TdApi.Chat
-                    val title = if (chatId == savedChatId) "Saved Messages" else chat?.title
+                    val title = if (chatId == savedChatId) SAVED_MESSAGES_TITLE else chat?.title
                     if (title == null) {
                         if (pending.decrementAndGet() == 0) finish()
                         return@chatSend
@@ -120,31 +120,7 @@ internal fun SavedMessagesRepository.loadSavedMessagesChatInternal(
 }
 
 private fun SavedMessagesRepository.hasVideoInChatInternal(chatId: Long, onResult: (Boolean) -> Unit) {
-    val filters = listOf(
-        TdApi.SearchMessagesFilterVideo(),
-        TdApi.SearchMessagesFilterDocument(),
-        TdApi.SearchMessagesFilterVideoNote(),
-        TdApi.SearchMessagesFilterAnimation(),
-        TdApi.SearchMessagesFilterPhotoAndVideo()
-    )
-    val pending = AtomicInteger(filters.size)
-    val found = AtomicBoolean(false)
-    val completed = AtomicBoolean(false)
-
-    fun finish() {
-        if (completed.get()) return
-        val done = found.get() || pending.decrementAndGet() == 0
-        if (done && completed.compareAndSet(false, true)) {
-            onResult(found.get())
-        }
-    }
-
-    filters.forEach { filter ->
-        searchWithFilterInternal(chatId, 1, null, filter) { items, _ ->
-            if (!completed.get() && items.any { it.type == MediaType.Video }) {
-                found.set(true)
-            }
-            finish()
-        }
+    searchWithFilterInternal(chatId, 1, null, TdApi.SearchMessagesFilterPhotoAndVideo()) { items, _ ->
+        onResult(items.any { it.type == MediaType.Video })
     }
 }

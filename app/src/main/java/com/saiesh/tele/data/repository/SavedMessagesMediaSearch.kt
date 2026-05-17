@@ -25,9 +25,7 @@ internal fun SavedMessagesRepository.searchMediaInternal(
                 error = err
             }
             if (pendingRequests.decrementAndGet() == 0) {
-                val merged = results
-                    .distinctBy { it.messageId }
-                    .sortedByDescending { it.date }
+                val merged = results.dedupeAndSort()
                 onResult(merged.take(limit), error)
             }
         }

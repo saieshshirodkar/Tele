@@ -1,30 +1,16 @@
 package com.saiesh.tele.presentation.media.ui
 
 import android.os.Bundle
-import android.view.Gravity
 import android.view.View
-import android.view.ViewGroup
 import android.widget.TextView
-import androidx.core.os.BundleCompat
-import androidx.fragment.app.DialogFragment
 import com.saiesh.tele.R
 import com.saiesh.tele.domain.model.MediaItem
 
-class MediaContextMenuDialogFragment : DialogFragment(R.layout.dialog_media_context_menu) {
+class MediaContextMenuDialogFragment : BaseMediaDialogFragment(R.layout.dialog_media_context_menu) {
     interface Listener {
         fun onContextPlay(item: MediaItem)
         fun onContextDetails(item: MediaItem)
         fun onContextDelete(item: MediaItem)
-    }
-
-    private val mediaItem: MediaItem by lazy {
-        BundleCompat.getSerializable(requireArguments(), ARG_ITEM, MediaItem::class.java)
-            ?: error("Missing media item")
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setStyle(STYLE_NO_TITLE, R.style.Theme_Tele_ContextMenu)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -50,15 +36,7 @@ class MediaContextMenuDialogFragment : DialogFragment(R.layout.dialog_media_cont
         playNow.requestFocus()
     }
 
-    override fun onStart() {
-        super.onStart()
-        dialog?.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-        dialog?.window?.setGravity(Gravity.END)
-    }
-
     companion object {
-        private const val ARG_ITEM = "arg_media_item"
-
         fun newInstance(item: MediaItem): MediaContextMenuDialogFragment {
             return MediaContextMenuDialogFragment().apply {
                 arguments = Bundle().apply { putSerializable(ARG_ITEM, item) }
@@ -67,20 +45,10 @@ class MediaContextMenuDialogFragment : DialogFragment(R.layout.dialog_media_cont
     }
 }
 
-class ConfirmDeleteDialogFragment : DialogFragment(R.layout.dialog_confirm_delete) {
+class ConfirmDeleteDialogFragment : BaseMediaDialogFragment(R.layout.dialog_confirm_delete) {
     interface Listener {
         fun onConfirmDelete(item: MediaItem)
         fun onDeleteDismiss()
-    }
-
-    private val mediaItem: MediaItem by lazy {
-        BundleCompat.getSerializable(requireArguments(), ARG_ITEM, MediaItem::class.java)
-            ?: error("Missing media item")
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setStyle(STYLE_NO_TITLE, R.style.Theme_Tele_ContextMenu)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -106,15 +74,7 @@ class ConfirmDeleteDialogFragment : DialogFragment(R.layout.dialog_confirm_delet
         (parentFragment as? Listener)?.onDeleteDismiss()
     }
 
-    override fun onStart() {
-        super.onStart()
-        dialog?.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-        dialog?.window?.setGravity(Gravity.END)
-    }
-
     companion object {
-        private const val ARG_ITEM = "arg_media_item"
-
         fun newInstance(item: MediaItem): ConfirmDeleteDialogFragment {
             return ConfirmDeleteDialogFragment().apply {
                 arguments = Bundle().apply { putSerializable(ARG_ITEM, item) }

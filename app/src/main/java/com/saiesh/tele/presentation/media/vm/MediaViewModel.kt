@@ -6,6 +6,9 @@ import com.saiesh.tele.core.tdlib.client.TdLibClient
 import com.saiesh.tele.data.repository.SavedMessagesRepository
 import com.saiesh.tele.domain.model.MediaItem
 import com.saiesh.tele.domain.model.MediaUiState
+import com.saiesh.tele.domain.model.SAVED_MESSAGES_TITLE
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -20,20 +23,23 @@ class MediaViewModel(
     private val pageSize = 30
     private var isInitialized = false
 
+    private fun isMessageInSelectedChat(chatId: Long): Boolean {
+        val state = _uiState.value
+        return if (state.isSavedMessagesSelected) {
+            repository.cachedSavedMessagesChatId != null && chatId == repository.cachedSavedMessagesChatId
+        } else {
+            chatId == state.selectedChatId
+        }
+    }
+
     private val newMessageHandler: (TdApi.UpdateNewMessage) -> Unit = { update ->
         val message = update.message
         val content = message.content
-        if (content is TdApi.MessageVideo || 
+        if (content is TdApi.MessageVideo ||
             content is TdApi.MessageVideoNote ||
             content is TdApi.MessageDocument ||
             content is TdApi.MessageAnimation) {
-            val currentState = _uiState.value
-            val shouldAdd = if (currentState.isSavedMessagesSelected) {
-                repository.cachedSavedMessagesChatId != null && message.chatId == repository.cachedSavedMessagesChatId
-            } else {
-                message.chatId == currentState.selectedChatId
-            }
-            if (shouldAdd) {
+            if (isMessageInSelectedChat(message.chatId)) {
                 repository.getMessage(message.chatId, message.id) { item, _ ->
                     item?.let { newItem ->
                         _uiState.update { current ->
@@ -49,20 +55,14 @@ class MediaViewModel(
     }
 
     private val deleteMessageHandler: (TdApi.UpdateDeleteMessages) -> Unit = { update ->
-        if (update.isPermanent) {
-            val currentState = _uiState.value
-            val shouldRemove = if (currentState.isSavedMessagesSelected) {
-                repository.cachedSavedMessagesChatId != null && update.chatId == repository.cachedSavedMessagesChatId
-            } else {
-                update.chatId == currentState.selectedChatId
-            }
-            if (shouldRemove) {
-                _uiState.update { current ->
-                    current.copy(items = current.items.filterNot { update.messageIds.contains(it.messageId) })
-                }
+        if (update.isPermanent && isMessageInSelectedChat(update.chatId)) {
+            _uiState.update { current ->
+                current.copy(items = current.items.filterNot { update.messageIds.contains(it.messageId) })
             }
         }
     }
+
+    private var chatUpdateJob: Job? = null
 
     private val chatUpdateHandler: (TdApi.Object?) -> Unit = { update ->
         when (update) {
@@ -70,7 +70,11 @@ class MediaViewModel(
             is TdApi.UpdateChatAddedToList,
             is TdApi.UpdateChatRemovedFromList,
             is TdApi.UpdateChatPosition -> {
-                loadVideoChats()
+                chatUpdateJob?.cancel()
+                chatUpdateJob = viewModelScope.launch {
+                    delay(500)
+                    loadVideoChats()
+                }
             }
         }
     }
@@ -85,7 +89,6 @@ class MediaViewModel(
         if (isInitialized) return
         isInitialized = true
         refresh()
-        loadVideoChats()
     }
 
     override fun onCleared() {
@@ -101,7 +104,7 @@ class MediaViewModel(
             it.copy(
                 isLoading = true,
                 error = null,
-                selectedChatTitle = "Saved Messages",
+                selectedChatTitle = SAVED_MESSAGES_TITLE,
                 selectedChatId = null,
                 isSavedMessagesSelected = true,
                 hasMore = true,
@@ -120,6 +123,7 @@ class MediaViewModel(
                 )
             }
             fetchThumbnails(items)
+            loadVideoChats()
         }
     }
 
@@ -135,7 +139,7 @@ class MediaViewModel(
             it.copy(
                 isSavedMessagesSelected = true,
                 selectedChatId = null,
-                selectedChatTitle = "Saved Messages"
+                selectedChatTitle = SAVED_MESSAGES_TITLE
             )
         }
         loadVideoChats()
@@ -181,11 +185,15 @@ class MediaViewModel(
         _uiState.update { it.copy(isLoadingMore = true) }
         if (state.isSavedMessagesSelected) {
             repository.loadLatestMediaPaged(pageSize, nextFromMessageId) { items, nextFromId, error ->
+                val current = _uiState.value
+                if (!current.isLoadingMore) return@loadLatestMediaPaged
                 handleLoadMore(items, nextFromId, error)
             }
         } else {
             val chatId = state.selectedChatId ?: return
             repository.loadChatMediaPaged(chatId, pageSize, nextFromMessageId) { items, nextFromId, error ->
+                val current = _uiState.value
+                if (!current.isLoadingMore) return@loadChatMediaPaged
                 handleLoadMore(items, nextFromId, error)
             }
         }
@@ -232,7 +240,7 @@ class MediaViewModel(
     private fun loadVideoChats() {
         val selectedId = if (_uiState.value.isSavedMessagesSelected) repository.cachedSavedMessagesChatId else _uiState.value.selectedChatId
         _uiState.update { it.copy(isSidebarLoading = true, sidebarError = null) }
-        repository.loadVideoChats(40, selectedId) { chats, error ->
+        repository.loadVideoChats(15, selectedId) { chats, error ->
             _uiState.update { current ->
                 current.copy(
                     videoChats = chats,

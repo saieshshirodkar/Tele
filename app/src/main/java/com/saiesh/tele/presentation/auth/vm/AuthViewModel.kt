@@ -34,24 +34,14 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun onPhoneChange(value: String) {
-        _uiState.update { it.copy(phone = value, message = null) }
-    }
+    fun onPhoneChange(value: String) = updateField { it.copy(phone = value) }
+    fun onApiIdChange(value: String) = updateField { it.copy(apiId = value) }
+    fun onApiHashChange(value: String) = updateField { it.copy(apiHash = value) }
+    fun onCodeChange(value: String) = updateField { it.copy(code = value) }
+    fun onPasswordChange(value: String) = updateField { it.copy(password = value) }
 
-    fun onApiIdChange(value: String) {
-        _uiState.update { it.copy(apiId = value, message = null) }
-    }
-
-    fun onApiHashChange(value: String) {
-        _uiState.update { it.copy(apiHash = value, message = null) }
-    }
-
-    fun onCodeChange(value: String) {
-        _uiState.update { it.copy(code = value, message = null) }
-    }
-
-    fun onPasswordChange(value: String) {
-        _uiState.update { it.copy(password = value, message = null) }
+    private fun updateField(transform: (AuthUiState) -> AuthUiState) {
+        _uiState.update { transform(it).copy(message = null) }
     }
 
     fun submitPhone() {

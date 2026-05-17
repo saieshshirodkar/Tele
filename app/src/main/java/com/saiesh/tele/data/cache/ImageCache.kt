@@ -4,9 +4,16 @@ import android.graphics.Bitmap
 import android.util.LruCache
 
 object ImageCache {
-    private const val DEFAULT_CACHE_SIZE = 50
-    private val cache = LruCache<String, Bitmap>(DEFAULT_CACHE_SIZE)
-    private val miniCache = LruCache<Long, Bitmap>(100)
+    private const val MAX_CACHE_BYTES = 20 * 1024 * 1024
+    private const val MAX_MINI_CACHE_BYTES = 5 * 1024 * 1024
+
+    private val cache = object : LruCache<String, Bitmap>(MAX_CACHE_BYTES) {
+        override fun sizeOf(key: String, bitmap: Bitmap): Int = bitmap.byteCount
+    }
+
+    private val miniCache = object : LruCache<Long, Bitmap>(MAX_MINI_CACHE_BYTES) {
+        override fun sizeOf(key: Long, bitmap: Bitmap): Int = bitmap.byteCount
+    }
 
     fun get(key: String): Bitmap? = cache.get(key)
 
