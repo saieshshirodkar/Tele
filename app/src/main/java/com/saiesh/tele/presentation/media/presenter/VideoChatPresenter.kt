@@ -14,6 +14,9 @@ import com.saiesh.tele.domain.model.VideoChatItem
 class VideoChatPresenter : Presenter() {
     override fun onCreateViewHolder(parent: ViewGroup): Presenter.ViewHolder {
         val context = parent.context
+        val marginPx = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP, 6f, context.resources.displayMetrics
+        ).toInt()
         val textView = TextView(context).apply {
             isFocusable = true
             isFocusableInTouchMode = true
@@ -24,7 +27,7 @@ class VideoChatPresenter : Presenter() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply {
-                bottomMargin = 10
+                bottomMargin = marginPx
             }
             setOnFocusChangeListener { _, hasFocus ->
                 setTextColor(if (hasFocus) Color.BLACK else Color.WHITE)

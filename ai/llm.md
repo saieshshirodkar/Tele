@@ -1,7 +1,17 @@
 # Tele Android TV App - AI Context Documentation
 
-**File:** `ai/llm.md`  
+**File:** `ai/llm.md`
 **Purpose:** Comprehensive documentation for AI systems to understand the Tele codebase
+
+---
+
+## AI Instructions
+
+- **DO NOT** run `./gradlew installDebug` or any build command unless explicitly asked.
+- **DO NOT** modify code unless explicitly asked.
+- **DO NOT** touch git (add, commit, push, branch, etc.) unless explicitly asked.
+- **DO NOT** revert changes unless asked.
+- Keep responses short and direct. No AI slop.
 
 ---
 
@@ -28,7 +38,7 @@
 |----------|-------|
 | **App Name** | Tele |
 | **Package** | `com.saiesh.tele` |
-| **Version** | 0.0.1 (versionCode: 1) |
+| **Version** | 0.1 (versionCode: 3) |
 | **License** | MIT License (Copyright 2026 Syndicate) |
 
 ### What the App Does
@@ -40,10 +50,9 @@ Tele is an Android TV application that allows users to browse and play videos, p
 1. **Authentication**: Multi-step auth flow with API keys, phone number, verification code, and 2FA support
 2. **Media Browsing**: Browse videos from Saved Messages and other chats
 3. **Video Playback**: Stream videos via fast download links using external players
-4. **Search**: Search for media via Telegram bots (ProSearchM11Bot)
-5. **Chat Navigation**: Switch between different chats with video content
-6. **Media Management**: Delete messages from chats
-7. **Thumbnail Caching**: Efficient image loading with Glide and LRU cache
+4. **Chat Navigation**: Switch between different chats with video content
+5. **Media Management**: Delete messages from chats
+6. **Thumbnail Caching**: Efficient image loading with Glide and LRU cache
 
 ### Target Platform
 
@@ -74,88 +83,80 @@ Tele is an Android TV application that allows users to browse and play videos, p
 ### Layered Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    UI Layer (Presentation)               │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │   Fragments  │  │  ViewModels  │  │  Presenters  │  │
-│  └──────────────┘  └──────────────┘  └──────────────┘  │
-├─────────────────────────────────────────────────────────┤
-│                   Domain Layer (Models)                  │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │  MediaItem   │  │   UI States  │  │  Auth Steps  │  │
-│  └──────────────┘  └──────────────┘  └──────────────┘  │
-├─────────────────────────────────────────────────────────┤
-│                    Data Layer (Repository)               │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │         SavedMessagesRepository                  │  │
-│  │  (Media, Search, Thumbnails, Chats, Delete)      │  │
-│  └──────────────────────────────────────────────────┘  │
-├─────────────────────────────────────────────────────────┤
-│                   Core Layer (TDLib)                     │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │ TdLibClient  │  │TelegramAuth  │  │  ApiCredStore│  │
-│  │   (Object)   │  │   Manager    │  │              │  │
-│  └──────────────┘  └──────────────┘  └──────────────┘  │
-└─────────────────────────────────────────────────────────┘
++-----------------------------------------------------------+
+|                    UI Layer (Presentation)                  |
+|  +--------------+  +--------------+  +--------------+      |
+|  |   Fragments  |  |  ViewModels  |  |  Presenters  |      |
+|  +--------------+  +--------------+  +--------------+      |
++-----------------------------------------------------------+
+|                     Domain Layer (Models)                    |
+|  +--------------+  +--------------+  +--------------+      |
+|  |  MediaItem   |  |   UI States  |  |  Auth Steps  |      |
+|  +--------------+  +--------------+  +--------------+      |
++-----------------------------------------------------------+
+|                      Data Layer (Repository)                 |
+|  +------------------------------------------------------+  |
+|  |              SavedMessagesRepository                  |  |
+|  |  (Media, Search, Thumbnails, Chats, Delete)           |  |
+|  +------------------------------------------------------+  |
++-----------------------------------------------------------+
+|                     Core Layer (TDLib)                       |
+|  +--------------+  +--------------+  +--------------+      |
+|  | TdLibClient  |  |TelegramAuth  |  |  ApiCredStore|      |
+|  |   (Object)   |  |   Manager    |  |              |      |
+|  +--------------+  +--------------+  +--------------+      |
++-----------------------------------------------------------+
 ```
 
 ### Package Structure
 
 | Package | Path | Purpose |
 |---------|------|---------|
-| **app** | `/app/src/main/java/com/saiesh/tele/app/` | Application entry point (Application class, MainActivity) |
-| **core/tdlib** | `/app/src/main/java/com/saiesh/tele/core/tdlib/` | TDLib integration (Client wrapper, Auth manager) |
-| **data/cache** | `/app/src/main/java/com/saiesh/tele/data/cache/` | Caching layer (ImageCache) |
-| **data/repository** | `/app/src/main/java/com/saiesh/tele/data/repository/` | Data access (SavedMessagesRepository and extension files) |
-| **data/store** | `/app/src/main/java/com/saiesh/tele/data/store/` | Local storage (SharedPreferences wrapper) |
-| **domain/model** | `/app/src/main/java/com/saiesh/tele/domain/model/` | Domain models (MediaModels, AuthUiState - flat structure) |
-| **presentation/auth** | `/app/src/main/java/com/saiesh/tele/presentation/auth/` | Auth UI (Fragment, ViewModel) |
-| **presentation/media** | `/app/src/main/java/com/saiesh/tele/presentation/media/` | Media browsing UI (BrowseFragment, Presenters, Dialogs) |
+| **app** | `app/src/main/java/com/saiesh/tele/app/` | Application entry point (Application class, MainActivity) |
+| **core/tdlib** | `app/src/main/java/com/saiesh/tele/core/tdlib/` | TDLib integration (Client wrapper, Auth manager) |
+| **data/cache** | `app/src/main/java/com/saiesh/tele/data/cache/` | Caching layer (ImageCache) |
+| **data/repository** | `app/src/main/java/com/saiesh/tele/data/repository/` | Data access (SavedMessagesRepository and extension files) |
+| **data/store** | `app/src/main/java/com/saiesh/tele/data/store/` | Local storage (SharedPreferences wrapper) |
+| **domain/model** | `app/src/main/java/com/saiesh/tele/domain/model/` | Domain models (MediaModels, AuthUiState - flat structure) |
+| **presentation/auth** | `app/src/main/java/com/saiesh/tele/presentation/auth/` | Auth UI (Fragment, ViewModel) |
+| **presentation/media** | `app/src/main/java/com/saiesh/tele/presentation/media/` | Media browsing UI (BrowseFragment, Presenters, Dialogs) |
 
 ### Key Classes and Responsibilities
 
 #### Application Layer
 
-- **TeleApp** (`/app/src/main/java/com/saiesh/tele/app/TeleApp.kt`): Application class that loads the native TDLib library (`System.loadLibrary("tdjni")`)
-- **MainActivity** (`/app/src/main/java/com/saiesh/tele/app/MainActivity.kt`): Single Activity that hosts fragments and manages navigation between Auth and Browse screens
+- **TeleApp** (`app/src/main/java/com/saiesh/tele/app/TeleApp.kt`): Application class that loads the native TDLib library (`System.loadLibrary("tdjni")`)
+- **MainActivity** (`app/src/main/java/com/saiesh/tele/app/MainActivity.kt`): Single Activity that hosts fragments and manages navigation between Auth and Browse screens
 
 #### Core TDLib Layer
 
-- **TdLibClient** (`/app/src/main/java/com/saiesh/tele/core/tdlib/client/TdLibClient.kt`): Singleton wrapper around TDLib's Client class, manages update/error handlers using CopyOnWriteArrayList for thread safety
-- **TelegramAuthManager** (`/app/src/main/java/com/saiesh/tele/core/tdlib/auth/TelegramAuthManager.kt`): Handles entire authentication flow with TDLib, manages authorization state machine
+- **TdLibClient** (`app/src/main/java/com/saiesh/tele/core/tdlib/client/TdLibClient.kt`): Singleton wrapper around TDLib's Client class, manages update/error handlers using CopyOnWriteArrayList for thread safety
+- **TelegramAuthManager** (`app/src/main/java/com/saiesh/tele/core/tdlib/auth/TelegramAuthManager.kt`): Handles entire authentication flow with TDLib, manages authorization state machine
 
 #### Data Layer
 
-- **SavedMessagesRepository** (`/app/src/main/java/com/saiesh/tele/data/repository/SavedMessagesRepository.kt`): Main repository class that delegates to internal extension functions for different operations (paging, search, thumbnails, etc.)
-- **ApiCredentialsStore** (`/app/src/main/java/com/saiesh/tele/data/store/ApiCredentialsStore.kt`): Simple SharedPreferences wrapper for storing API credentials securely
+- **SavedMessagesRepository** (`app/src/main/java/com/saiesh/tele/data/repository/SavedMessagesRepository.kt`): Main repository class that delegates to internal extension functions for different operations (paging, search, thumbnails, etc.)
+- **ApiCredentialsStore** (`app/src/main/java/com/saiesh/tele/data/store/ApiCredentialsStore.kt`): Simple SharedPreferences wrapper for storing API credentials securely
 
 #### Presentation Layer
 
-- **AuthViewModel** (`/app/src/main/java/com/saiesh/tele/presentation/auth/vm/AuthViewModel.kt`): Manages auth UI state and user input validation
-- **MediaViewModel** (`/app/src/main/java/com/saiesh/tele/presentation/media/vm/MediaViewModel.kt`): Manages media browsing state, pagination, and thumbnail loading
-- **SearchViewModel** (`/app/src/main/java/com/saiesh/tele/presentation/search/vm/SearchViewModel.kt`): Manages search state and bot interactions
+- **AuthViewModel** (`app/src/main/java/com/saiesh/tele/presentation/auth/vm/AuthViewModel.kt`): Manages auth UI state and user input validation
+- **MediaViewModel** (`app/src/main/java/com/saiesh/tele/presentation/media/vm/MediaViewModel.kt`): Manages media browsing state, pagination, and thumbnail loading
 
 ### Data Flow
 
 #### 1. Authentication Flow
 
 ```
-User Input → AuthViewModel → TelegramAuthManager → TdLibClient → TDLib
-TDLib Updates → TelegramAuthManager → AuthUiState → AuthViewModel → AuthFragment
+User Input -> AuthViewModel -> TelegramAuthManager -> TdLibClient -> TDLib
+TDLib Updates -> TelegramAuthManager -> AuthUiState -> AuthViewModel -> AuthFragment
 ```
 
 #### 2. Media Loading Flow
 
 ```
-BrowseFragment → MediaViewModel → SavedMessagesRepository → TdLibClient → TDLib
-TDLib Response → Repository → Callback → ViewModel → MediaUiState → UI Update
-```
-
-#### 3. Search Flow
-
-```
-SearchFragment → SearchViewModel → Repository → TDLib Bot Interaction
-Bot Response → Repository → SearchBotResponse → ViewModel → UI Update
+BrowseFragment -> MediaViewModel -> SavedMessagesRepository -> TdLibClient -> TDLib
+TDLib Response -> Repository -> Callback -> ViewModel -> MediaUiState -> UI Update
 ```
 
 ---
@@ -166,7 +167,7 @@ Bot Response → Repository → SearchBotResponse → ViewModel → UI Update
 
 #### Activities
 
-- **MainActivity** (`/app/src/main/java/com/saiesh/tele/app/MainActivity.kt`):
+- **MainActivity** (`app/src/main/java/com/saiesh/tele/app/MainActivity.kt`):
   - Extends `FragmentActivity`
   - Hosts all fragments in `R.id.main_browse_fragment`
   - Manages navigation between AuthFragment and BrowseFragment
@@ -178,19 +179,14 @@ Bot Response → Repository → SearchBotResponse → ViewModel → UI Update
 |----------|------|---------|
 | **AuthFragment** | `presentation/auth/ui/AuthFragment.kt` | Multi-step authentication UI (API keys, phone, code, password) |
 | **BrowseFragment** | `presentation/media/ui/BrowseFragment.kt` | Main media browsing with Leanback's BrowseSupportFragment |
-| **SearchFragment** | `presentation/search/ui/SearchFragment.kt` | Search interface with RecyclerView |
-| **MediaContextMenuDialogFragment** | `presentation/media/ui/MediaContextMenuDialogFragment.kt` | Context menu for media items (Play, Details, Delete) |
+| **MediaContextMenuDialogFragment** | `presentation/media/ui/MediaDialogs.kt` | Context menu for media items (Play, Details, Delete) |
 | **MediaDetailsDialogFragment** | `presentation/media/ui/MediaDetailsDialogFragment.kt` | Shows detailed media information |
-| **ConfirmDeleteDialogFragment** | `presentation/media/ui/ConfirmDeleteDialogFragment.kt` | Confirmation dialog for deletion |
+| **ConfirmDeleteDialogFragment** | `presentation/media/ui/MediaDialogs.kt` | Confirmation dialog for deletion |
 
 #### Presenters (Leanback)
 
-- **MediaCardPresenter** (`/app/src/main/java/com/saiesh/tele/presentation/media/presenter/MediaCardPresenter.kt`): Presents media items as cards with thumbnails using ImageCardView
-- **VideoChatPresenter** (`/app/src/main/java/com/saiesh/tele/presentation/media/presenter/VideoChatPresenter.kt`): Presents chat list items as text views with focus styling
-
-#### Adapters
-
-- **SearchResultsAdapter** (`/app/src/main/java/com/saiesh/tele/presentation/search/adapter/SearchResultsAdapter.kt`): RecyclerView adapter for search results
+- **MediaCardPresenter** (`app/src/main/java/com/saiesh/tele/presentation/media/presenter/MediaCardPresenter.kt`): Presents media items as cards with thumbnails using ImageCardView
+- **VideoChatPresenter** (`app/src/main/java/com/saiesh/tele/presentation/media/presenter/VideoChatPresenter.kt`): Presents chat list items as text views with focus styling
 
 ### Core Functionality
 
@@ -198,10 +194,10 @@ Bot Response → Repository → SearchBotResponse → ViewModel → UI Update
 
 The app integrates with Telegram through the official TDLib:
 
-- **Native Library**: `/app/src/main/jniLibs/armeabi-v7a/libtdjni.so` (15.7 MB)
-- **Java Wrapper**: 
-  - `Client.java` (`/app/src/main/java/org/drinkless/tdlib/Client.java`): Main client class with ResultHandler interface
-  - `TdApi.java` (`/app/src/main/java/org/drinkless/tdlib/TdApi.java`): Auto-generated API classes
+- **Native Library**: `app/src/main/jniLibs/armeabi-v7a/libtdjni.so`
+- **Java Wrapper**:
+  - `Client.java` (`app/src/main/java/org/drinkless/tdlib/Client.java`): Main client class with ResultHandler interface
+  - `TdApi.java` (`app/src/main/java/org/drinkless/tdlib/TdApi.java`): Auto-generated API classes
 
 #### Authentication System
 
@@ -214,7 +210,7 @@ The auth system follows TDLib's authorization state machine:
 5. **WaitPassword**: User enters 2FA password (if enabled)
 6. **Ready**: Authorized state
 
-**File**: `/app/src/main/java/com/saiesh/tele/core/tdlib/auth/TelegramAuthManager.kt`
+**File**: `app/src/main/java/com/saiesh/tele/core/tdlib/auth/TelegramAuthManager.kt`
 
 ### Data Layer (Repositories)
 
@@ -227,15 +223,14 @@ The auth system follows TDLib's authorization state machine:
 | `SavedMessagesPaging.kt` | Paged loading of media from chat history |
 | `SavedMessagesChats.kt` | Loading chat list and Saved Messages chat resolution |
 | `SavedMessagesMediaSearch.kt` | Searching media within chats using filters |
-| `SavedMessagesThumbnail.kt` | Thumbnail downloading and path resolution |
-| `SavedMessagesFastLink.kt` | Fast download link generation via FileToLinkV5Bot |
-| `SavedMessagesUtils.kt` | Utility functions (delete, thumbnail) |
+| `SavedMessagesFastLink.kt` | Fast download link generation via StreamVaultProBot |
+| `SavedMessagesUtils.kt` | Utility functions (delete, thumbnail download) |
 
 ### Domain Layer (Models)
 
-**MediaModels** (`/app/src/main/java/com/saiesh/tele/domain/model/MediaModels.kt`): Combined file containing MediaType enum, MediaItem, MediaUiState, and VideoChatItem data classes.
+**MediaModels** (`app/src/main/java/com/saiesh/tele/domain/model/MediaModels.kt`): Combined file containing MediaType enum, MediaItem, MediaUiState, and VideoChatItem data classes.
 
-**AuthUiState** (`/app/src/main/java/com/saiesh/tele/domain/model/AuthUiState.kt`):
+**AuthUiState** (`app/src/main/java/com/saiesh/tele/domain/model/AuthUiState.kt`):
 
 ```kotlin
 data class AuthUiState(
@@ -256,7 +251,7 @@ data class AuthUiState(
 
 ### Gradle Configuration
 
-**Root build.gradle.kts** (`/home/syndicate/Tele/build.gradle.kts`):
+**Root build.gradle.kts** (`build.gradle.kts`):
 ```kotlin
 plugins {
     alias(libs.plugins.android.application) apply false
@@ -264,7 +259,7 @@ plugins {
 }
 ```
 
-**App build.gradle.kts** (`/home/syndicate/Tele/app/build.gradle.kts`):
+**App build.gradle.kts** (`app/build.gradle.kts`):
 - **Namespace**: `com.saiesh.tele`
 - **Compile SDK**: 36
 - **Min SDK**: 23
@@ -274,7 +269,7 @@ plugins {
 
 ### Dependencies (libs.versions.toml)
 
-**File**: `/home/syndicate/Tele/gradle/libs.versions.toml`
+**File**: `gradle/libs.versions.toml`
 
 | Library | Version | Purpose |
 |---------|---------|---------|
@@ -314,11 +309,11 @@ API credentials are handled through multiple sources (in priority order):
 2. **BuildConfig** (Build-time from local.properties - for development only)
 3. **Fallback**: Empty values trigger EnterApiKeys auth step
 
-**ApiCredentialsStore** (`/app/src/main/java/com/saiesh/tele/data/store/ApiCredentialsStore.kt`):
+**ApiCredentialsStore** (`app/src/main/java/com/saiesh/tele/data/store/ApiCredentialsStore.kt`):
 ```kotlin
 class ApiCredentialsStore(context: Context) {
     private val prefs = context.getSharedPreferences("telegram_api_credentials", Context.MODE_PRIVATE)
-    
+
     fun getApiId(): String? = prefs.getString("api_id", null)
     fun getApiHash(): String? = prefs.getString("api_hash", null)
     fun save(apiId: String, apiHash: String) { ... }
@@ -360,22 +355,16 @@ buildConfigField("String", "TELEGRAM_API_HASH", ""$apiHash"")
 
 ### TDLib (Telegram Database Library)
 
-- **Version**: Git commit `cb863c1600082404428f1a84e407b866b9d412a8`
 - **Native Library**: `libtdjni.so` (included for armeabi-v7a)
 - **Java Bindings**: Client.java and TdApi.java (official TDLib Java bindings)
 
 ### Telegram Bots
 
-The app integrates with two Telegram bots:
+The app integrates with one Telegram bot:
 
-1. **FileToLinkV5Bot** (`BOT_USERNAME` in `SavedMessagesRepository.kt`):
+1. **StreamVaultProBot** (`BOT_USERNAME` in `SavedMessagesRepository.kt`):
    - Provides fast download links for media
    - Used when user wants to play a video
-
-2. **ProSearchM11Bot** (`PRO_SEARCH_BOT_USERNAME`):
-   - Provides search functionality for movies/media
-   - Returns inline keyboard with search results
-   - Supports pagination
 
 ### External Video Player
 
@@ -441,21 +430,11 @@ Then build:
 
 ### GitHub Actions Workflow
 
-**File**: `.github/workflows/release-apk.yml`
+The repo uses GitHub Actions for automated releases (workflow file not present in local checkout).
 
 **Triggers**:
 - Manual dispatch (`workflow_dispatch`)
 - Push of version tags (`v*`)
-
-**Workflow Steps**:
-
-1. **Checkout**: Uses `actions/checkout@v4`
-2. **Set up JDK**: Temurin distribution, Java 17, Gradle caching
-3. **Decode Keystore**: Decodes base64 keystore from `secrets.RELEASE_KEYSTORE_BASE64`
-4. **Create local.properties**: Writes signing configuration from secrets
-5. **Build APK**: `./gradlew assembleRelease`
-6. **Rename APK**: Strips `v` prefix from tag name (e.g., `v1.0.0` → `Tele-1.0.0.apk`)
-7. **Upload Release**: Uses `softprops/action-gh-release@v2` to attach APK to release
 
 **Required Secrets**:
 - `RELEASE_KEYSTORE_BASE64`: Base64-encoded release keystore
@@ -466,16 +445,16 @@ Then build:
 
 1. Update version in `app/build.gradle.kts`:
    ```kotlin
-   versionCode = 2
-   versionName = "0.0.2"
+   versionCode = 4
+   versionName = "0.2"
    ```
 
 2. Commit and push changes
 
 3. Create and push tag:
    ```bash
-   git tag -a v0.0.2 -m "Release version 0.0.2"
-   git push origin v0.0.2
+   git tag -a v0.2 -m "Release version 0.2"
+   git push origin v0.2
    ```
 
 4. GitHub Actions automatically builds and creates release
@@ -495,75 +474,72 @@ The released APK:
 ## File Structure
 
 ```
-/home/syndicate/Tele/
-├── .github/workflows/release-apk.yml    # CI/CD workflow
-├── app/
-│   ├── build.gradle.kts                  # App build configuration
-│   └── src/main/
-│       ├── AndroidManifest.xml           # App manifest
-│       ├── java/com/saiesh/tele/
-│       │   ├── app/
-│       │   │   ├── MainActivity.kt       # Main activity
-│       │   │   └── TeleApp.kt            # Application class
-│       │   ├── core/tdlib/
-│       │   │   ├── client/
-│       │   │   │   └── TdLibClient.kt    # TDLib client wrapper
-│       │   │   └── auth/
-│       │   │       └── TelegramAuthManager.kt  # Auth manager
-│       │   ├── data/
-│       │   │   ├── cache/
-│       │   │   │   └── ImageCache.kt     # LRU image cache
-│       │   │   ├── repository/           # Repository implementations (flattened)
-│       │   │   │   ├── SavedMessagesRepository.kt
-│       │   │   │   ├── SavedMessagesMediaMapper.kt
-│       │   │   │   ├── SavedMessagesPaging.kt
-│       │   │   │   ├── SavedMessagesChats.kt
-│       │   │   │   ├── SavedMessagesMediaSearch.kt
-│       │   │   │   ├── SavedMessagesThumbnail.kt
-│       │   │   │   ├── SavedMessagesFastLink.kt
-│       │   │   │   └── SavedMessagesUtils.kt
-│       │   │   └── store/
-│       │   │       └── ApiCredentialsStore.kt  # SharedPreferences wrapper
-│       │   ├── domain/model/             # Domain models (flat structure)
-│       │   │   ├── MediaModels.kt        # Combined: MediaType, MediaItem, MediaUiState, VideoChatItem
-│       │   │   └── AuthUiState.kt        # Auth UI state
-│       │   └── presentation/
-│       │       ├── auth/
-│       │       │   ├── ui/
-│       │       │   │   └── AuthFragment.kt
-│       │       │   └── vm/
-│       │       │       └── AuthViewModel.kt
-│       │       └── media/
-│       │           ├── ui/
-│       │           │   ├── BrowseFragment.kt
-│       │           │   ├── MediaDialogs.kt  # Combined context menu and delete dialogs
-│       │           │   └── MediaDetailsDialogFragment.kt
-│       │           ├── presenter/
-│       │           │   ├── MediaCardPresenter.kt
-│       │           │   └── VideoChatPresenter.kt
-│       │           └── vm/
-│       │               └── MediaViewModel.kt
-│       ├── java/org/drinkless/tdlib/     # TDLib Java bindings
-│       │   ├── Client.java
-│       │   └── TdApi.java
-│       ├── jniLibs/armeabi-v7a/
-│       │   └── libtdjni.so               # TDLib native library
-│       └── res/                          # Android resources
-│           ├── layout/
-│           ├── drawable/
-│           ├── values/
-│           └── drawable-nodpi/
-├── ai/
-│   ├── llm.txt                           # This file (plain text)
-│   └── llm.md                            # Markdown version
-├── gradle/libs.versions.toml            # Dependency version catalog
-├── build.gradle.kts                      # Root build script
-├── settings.gradle.kts                   # Project settings
-├── gradle.properties                     # Gradle configuration
-├── local.properties                      # Local SDK and API keys (NOT in git)
-├── README.md                             # User documentation
-├── LICENSE                               # MIT License
-└── .gitignore                            # Git ignore rules
+Tele/
+- .github/workflows/release-apk.yml    # CI/CD workflow
+- app/
+  - build.gradle.kts                   # App build configuration
+  - src/main/
+    - AndroidManifest.xml              # App manifest
+    - java/com/saiesh/tele/
+      - app/
+        - MainActivity.kt              # Main activity
+        - TeleApp.kt                   # Application class
+      - core/tdlib/
+        - client/
+          - TdLibClient.kt             # TDLib client wrapper
+        - auth/
+          - TelegramAuthManager.kt     # Auth manager
+      - data/
+        - cache/
+          - ImageCache.kt              # LRU image cache
+        - repository/
+          - SavedMessagesRepository.kt
+          - SavedMessagesMediaMapper.kt
+          - SavedMessagesPaging.kt
+          - SavedMessagesChats.kt
+          - SavedMessagesMediaSearch.kt
+          - SavedMessagesFastLink.kt
+          - SavedMessagesUtils.kt
+        - store/
+          - ApiCredentialsStore.kt     # SharedPreferences wrapper
+      - domain/model/
+        - MediaModels.kt              # MediaType, MediaItem, MediaUiState, VideoChatItem
+        - AuthUiState.kt              # Auth UI state
+      - presentation/
+        - auth/
+          - ui/AuthFragment.kt
+          - vm/AuthViewModel.kt
+        - media/
+          - ui/
+            - BrowseFragment.kt
+            - MediaDialogs.kt         # Context menu + delete dialogs
+            - MediaDetailsDialogFragment.kt
+            - BaseMediaDialogFragment.kt
+          - presenter/
+            - MediaCardPresenter.kt
+            - VideoChatPresenter.kt
+          - vm/MediaViewModel.kt
+    - java/org/drinkless/tdlib/       # TDLib Java bindings
+      - Client.java
+      - TdApi.java
+    - jniLibs/armeabi-v7a/
+      - libtdjni.so                   # TDLib native library
+    - res/
+      - layout/
+      - drawable/
+      - values/
+      - drawable-nodpi/
+- ai/
+  - llm.txt                           # Plain text version
+  - llm.md                            # Markdown version
+- gradle/libs.versions.toml          # Dependency version catalog
+- build.gradle.kts                    # Root build script
+- settings.gradle.kts                 # Project settings
+- gradle.properties                   # Gradle configuration
+- local.properties                    # Local SDK and API keys (NOT in git)
+- README.md                          # User documentation
+- LICENSE                            # MIT License
+- .gitignore                         # Git ignore rules
 ```
 
 ---
@@ -575,11 +551,11 @@ The released APK:
 | Question | Answer |
 |----------|--------|
 | **What is this app?** | Tele is an Android TV app for browsing and playing media from Telegram chats. |
-| **How does authentication work?** | Multi-step flow: API keys → Phone number → Verification code → Optional 2FA → Ready state. |
+| **How does authentication work?** | Multi-step flow: API keys -> Phone number -> Verification code -> Optional 2FA -> Ready state. |
 | **Are API keys included in the APK?** | **NO**. Release APKs contain no hardcoded API keys. Users enter their own. |
-| **What architecture pattern is used?** | Layered architecture: UI → Domain → Data → Core (TDLib). |
+| **What architecture pattern is used?** | Layered architecture: UI -> Domain -> Data -> Core (TDLib). |
 | **How is media loaded?** | Paged loading from chat history via SavedMessagesRepository and TDLib. |
-| **What external services are used?** | Telegram (via TDLib), FileToLinkV5Bot for fast links, ProSearchM11Bot for search. |
+| **What external services are used?** | Telegram (via TDLib), StreamVaultProBot for fast links. |
 | **How are releases made?** | GitHub Actions workflow triggered by git tags (v*). |
 | **What is the entry point?** | TeleApp.kt loads TDLib, MainActivity.kt hosts fragments. |
 | **How is data cached?** | LruCache for images, TDLib manages its own database. |
@@ -618,6 +594,6 @@ License:            MIT
 
 ---
 
-**Last Updated:** 2026-04-15
+**Last Updated:** 2026-05-28
 
-This documentation provides complete context about the Tele Android TV app. For questions or issues, refer to the README.md or contact the author.
+This documentation provides complete context about the Tele Android TV app.

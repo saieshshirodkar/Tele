@@ -31,6 +31,9 @@ class MediaCardPresenter(
 ) : Presenter() {
     override fun onCreateViewHolder(parent: ViewGroup): Presenter.ViewHolder {
         val context = parent.context
+        val marginPx = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP, 8f, context.resources.displayMetrics
+        ).toInt()
         val cardView = ImageCardView(context).apply {
             isFocusable = true
             isFocusableInTouchMode = true
@@ -47,6 +50,12 @@ class MediaCardPresenter(
             setMainImageDimensions(widthPx, heightPx)
             setBackgroundResource(R.drawable.rounded_card_background)
             setInfoAreaBackgroundColor(android.graphics.Color.TRANSPARENT)
+            layoutParams = ViewGroup.MarginLayoutParams(
+                widthPx, ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                leftMargin = marginPx
+                rightMargin = marginPx
+            }
         }
         return ViewHolder(cardView)
     }
