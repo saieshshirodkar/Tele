@@ -1,7 +1,9 @@
 package com.saiesh.tele.presentation.media.presenter
 
+import android.graphics.Color
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.core.content.ContextCompat
@@ -24,6 +26,9 @@ class VideoChatPresenter : Presenter() {
             ).apply {
                 bottomMargin = 10
             }
+            setOnFocusChangeListener { _, hasFocus ->
+                setTextColor(if (hasFocus) Color.BLACK else Color.WHITE)
+            }
         }
         return ViewHolder(textView)
     }
@@ -37,7 +42,7 @@ class VideoChatPresenter : Presenter() {
         } else {
             textView.background = ContextCompat.getDrawable(textView.context, R.drawable.chat_item_background)
         }
-        textView.setTextColor(ContextCompat.getColor(textView.context, android.R.color.white))
+        textView.setTextColor(if (textView.isFocused) Color.BLACK else Color.WHITE)
     }
 
     override fun onUnbindViewHolder(viewHolder: Presenter.ViewHolder) = Unit

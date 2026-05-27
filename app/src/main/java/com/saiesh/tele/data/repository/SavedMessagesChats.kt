@@ -5,6 +5,7 @@ import com.saiesh.tele.domain.model.SAVED_MESSAGES_TITLE
 import com.saiesh.tele.domain.model.MediaType
 import com.saiesh.tele.domain.model.VideoChatItem
 import org.drinkless.tdlib.TdApi
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 internal fun SavedMessagesRepository.loadVideoChatsInternal(
@@ -120,7 +121,31 @@ internal fun SavedMessagesRepository.loadSavedMessagesChatInternal(
 }
 
 private fun SavedMessagesRepository.hasVideoInChatInternal(chatId: Long, onResult: (Boolean) -> Unit) {
+    val found = AtomicBoolean(false)
+    val pending = AtomicInteger(2)
+    val lock = Any()
+
+    fun checkDone() {
+        if (pending.decrementAndGet() == 0) {
+            onResult(found.get())
+        }
+    }
+
     searchWithFilterInternal(chatId, 1, null, TdApi.SearchMessagesFilterPhotoAndVideo()) { items, _ ->
-        onResult(items.any { it.type == MediaType.Video })
+        synchronized(lock) {
+            if (items.any { it.type == MediaType.Video }) {
+                found.set(true)
+            }
+        }
+        checkDone()
+    }
+
+    searchWithFilterInternal(chatId, 1, null, TdApi.SearchMessagesFilterDocument()) { items, _ ->
+        synchronized(lock) {
+            if (items.any { it.type == MediaType.Video }) {
+                found.set(true)
+            }
+        }
+        checkDone()
     }
 }

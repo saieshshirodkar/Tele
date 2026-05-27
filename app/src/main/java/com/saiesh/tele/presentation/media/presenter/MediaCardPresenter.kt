@@ -2,12 +2,24 @@ package com.saiesh.tele.presentation.media.presenter
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.BitmapShader
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.RectF
+import android.graphics.Shader
+import android.graphics.Matrix
 import android.util.TypedValue
 import android.view.ViewGroup
 import androidx.leanback.widget.ImageCardView
 import androidx.leanback.widget.Presenter
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DecodeFormat
+import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool
+import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
+import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import java.io.File
+import java.security.MessageDigest
 import com.saiesh.tele.R
 import com.saiesh.tele.data.cache.ImageCache
 import com.saiesh.tele.data.repository.formatDuration
@@ -33,6 +45,8 @@ class MediaCardPresenter(
                 resources.displayMetrics
             ).toInt()
             setMainImageDimensions(widthPx, heightPx)
+            setBackgroundResource(R.drawable.rounded_card_background)
+            setInfoAreaBackgroundColor(android.graphics.Color.TRANSPARENT)
         }
         return ViewHolder(cardView)
     }
@@ -56,9 +70,13 @@ class MediaCardPresenter(
                 imageView?.let { target ->
                     val miniBitmap = getOrDecodeMiniThumbnail(media.messageId, media.miniThumbnailBytes)
 
+                    val cornerPx = TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP, 12f, cardView.resources.displayMetrics
+                    ).toInt()
                     Glide.with(cardView)
                         .load(File(media.thumbnailPath!!))
-                        .centerCrop()
+                        .format(DecodeFormat.PREFER_ARGB_8888)
+                        .transform(CenterCrop(), TopRoundedCorners(cornerPx))
                         .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
                         .let { request ->
                             if (miniBitmap != null) {
@@ -99,4 +117,38 @@ class MediaCardPresenter(
         cardView.mainImage = null
     }
 
+}
+
+private class TopRoundedCorners(private val radius: Int) : BitmapTransformation() {
+    override fun transform(pool: BitmapPool, toTransform: Bitmap, outWidth: Int, outHeight: Int): Bitmap {
+        val result = pool.get(outWidth, outHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(result)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        val rect = RectF(0f, 0f, outWidth.toFloat(), outHeight.toFloat())
+        val radii = floatArrayOf(
+            radius.toFloat(), radius.toFloat(),
+            radius.toFloat(), radius.toFloat(),
+            0f, 0f,
+            0f, 0f
+        )
+        val path = Path().apply { addRoundRect(rect, radii, Path.Direction.CW) }
+        paint.shader = BitmapShader(toTransform, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
+            setLocalMatrix(Matrix().apply {
+                setRectToRect(
+                    RectF(0f, 0f, toTransform.width.toFloat(), toTransform.height.toFloat()),
+                    RectF(0f, 0f, outWidth.toFloat(), outHeight.toFloat()),
+                    Matrix.ScaleToFit.CENTER
+                )
+            })
+        }
+        canvas.drawPath(path, paint)
+        return result
+    }
+
+    override fun updateDiskCacheKey(messageDigest: MessageDigest) {
+        messageDigest.update("com.saiesh.tele.TopRoundedCorners$radius".toByteArray())
+    }
+
+    override fun equals(other: Any?): Boolean = other is TopRoundedCorners && other.radius == radius
+    override fun hashCode(): Int = radius.hashCode()
 }
