@@ -82,6 +82,8 @@ android {
         buildConfig = true
     }
 
+
+
 }
 
 dependencies {
@@ -93,6 +95,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.recyclerview)
-    implementation(libs.androidx.leanback)
+    implementation(project(":leanback-1.0.0"))
     implementation(libs.glide)
+
+
 }

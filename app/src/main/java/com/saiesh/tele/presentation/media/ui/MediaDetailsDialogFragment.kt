@@ -5,7 +5,7 @@ import android.text.format.Formatter
 import android.view.View
 import android.widget.TextView
 import com.saiesh.tele.R
-import com.saiesh.tele.data.repository.formatDuration
+import com.saiesh.tele.data.mapper.formatDuration
 import com.saiesh.tele.domain.model.MediaItem
 import java.text.SimpleDateFormat
 import java.util.Date

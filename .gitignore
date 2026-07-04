@@ -64,3 +64,4 @@ release.keystore.b64
 
 # But include TDLib native library (required for app to work)
 !app/src/main/jniLibs/**/*.so
+**/build

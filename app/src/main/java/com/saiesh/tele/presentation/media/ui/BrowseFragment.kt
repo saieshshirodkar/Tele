@@ -47,6 +47,7 @@ class BrowseFragment : BrowseSupportFragment(),
     private var mediaRowViewHolder: ListRowPresenter.ViewHolder? = null
     private var pendingFocusFirstItem = false
     private var lastChatKey: Long? = null
+    private var lastFocusVersion = 0
     private var lastContextItem: MediaItem? = null
     private val mediaDiff = object : DiffCallback<MediaItem>() {
         override fun areItemsTheSame(oldItem: MediaItem, newItem: MediaItem): Boolean {
@@ -76,6 +77,21 @@ class BrowseFragment : BrowseSupportFragment(),
         rowsAdapter.add(ListRow(chatHeader, chatAdapter))
         adapter = rowsAdapter
         setupListeners()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        view?.post {
+            if (isShowingHeaders) {
+                startHeadersTransition(false)
+            }
+            getRowsSupportFragment()?.verticalGridView?.let { grid ->
+                grid.invalidate()
+                if (!grid.hasFocus()) {
+                    grid.requestFocus()
+                }
+            }
+        }
     }
 
     override fun onViewCreated(view: android.view.View, savedInstanceState: Bundle?) {
@@ -125,7 +141,7 @@ class BrowseFragment : BrowseSupportFragment(),
                             setSpan(StyleSpan(Typeface.BOLD), 0, rawTitle.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                         }
                         title = boldTitle
-                        updateMediaItems(state.items)
+                        updateMediaItems(state.items, state.focusVersion)
                         updateChatItems(state.videoChats)
                         if (state.error != null) {
                             Toast.makeText(requireContext(), state.error, Toast.LENGTH_LONG).show()
@@ -139,14 +155,26 @@ class BrowseFragment : BrowseSupportFragment(),
         }
     }
 
-    private fun updateMediaItems(items: List<MediaItem>) {
+    private fun updateMediaItems(items: List<MediaItem>, focusVersion: Int) {
         mediaAdapter.setItems(items, mediaDiff)
-        if (pendingFocusFirstItem) {
+        val shouldFocus = pendingFocusFirstItem || (focusVersion != lastFocusVersion).also {
+            lastFocusVersion = focusVersion
+        }
+        if (shouldFocus) {
             pendingFocusFirstItem = false
-            mediaRowViewHolder?.gridView?.post {
-                mediaRowViewHolder?.gridView?.setSelectedPosition(0)
-                mediaRowViewHolder?.gridView?.requestFocus()
-            }
+            focusMediaGrid()
+        }
+    }
+
+    private fun focusMediaGrid() {
+        val rowsGrid = getRowsSupportFragment()?.verticalGridView ?: return
+        rowsGrid.setSelectedPosition(0)
+        rowsGrid.post {
+            val vh = rowsGrid.findViewHolderForAdapterPosition(0) as? ListRowPresenter.ViewHolder
+            val mediaGrid = vh?.gridView ?: return@post
+            mediaGrid.layoutManager?.scrollToPosition(0)
+            mediaGrid.setSelectedPosition(0)
+            mediaGrid.requestFocus()
         }
     }
 
@@ -165,47 +193,47 @@ class BrowseFragment : BrowseSupportFragment(),
     }
 
     private fun handleMediaClick(item: MediaItem) {
-        if (item.type != MediaType.Video || item.fileId == null) {
-            return
-        }
+        if (item.type != MediaType.Video || item.fileId == null) return
         if (!isAdded) return
         Toast.makeText(requireContext(), "Fetching fast link...", Toast.LENGTH_SHORT).show()
         mediaViewModel.requestFastLink(item) { url, error ->
-            if (!isAdded) return@requestFastLink
-            if (url.isNullOrBlank()) {
-                Toast.makeText(
-                    requireContext(),
-                    error ?: "Fast link not found",
-                    Toast.LENGTH_LONG
-                ).show()
-                return@requestFastLink
-            }
-            Log.d("Tele", "Launching MPV with fast link url=$url")
-            val uri = android.net.Uri.parse(url)
-            val intent = Intent(Intent.ACTION_VIEW)
-                .setDataAndType(uri, "video/*")
-                .addCategory(Intent.CATEGORY_BROWSABLE)
+            requireActivity().runOnUiThread {
+                if (!isAdded) return@runOnUiThread
+                if (url.isNullOrBlank()) {
+                    Toast.makeText(
+                        requireContext(),
+                        error ?: "Fast link not found",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@runOnUiThread
+                }
+                Log.d("Tele", "Launching MPVTube with fast link url=$url")
+                val uri = android.net.Uri.parse(url)
+                val intent = Intent(Intent.ACTION_VIEW)
+                    .setDataAndType(uri, "video/*")
+                    .addCategory(Intent.CATEGORY_BROWSABLE)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-            val mpvPackage = "is.xyz.mpv"
-            val hasMpv = try {
-                requireContext().packageManager.getPackageInfo(mpvPackage, 0)
-                true
-            } catch (_: PackageManager.NameNotFoundException) {
-                false
-            }
-            if (hasMpv) {
-                intent.setClassName(mpvPackage, "is.xyz.mpv.MPVActivity")
-                intent.putExtra(Intent.EXTRA_TITLE, item.title)
-            } else {
-                Log.w("Tele", "MPV package not found: $mpvPackage")
-            }
+                val playerPackage = "com.mpvtube"
+                val hasPlayer = try {
+                    requireContext().packageManager.getPackageInfo(playerPackage, 0)
+                    true
+                } catch (_: PackageManager.NameNotFoundException) {
+                    false
+                }
+                if (hasPlayer) {
+                    intent.setClassName(playerPackage, "com.mpvtube.MainActivity")
+                    intent.putExtra(Intent.EXTRA_TITLE, item.title)
+                } else {
+                    Log.w("Tele", "MPVTube package not found: $playerPackage")
+                }
 
-            try {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                requireContext().startActivity(intent)
-            } catch (e: Exception) {
-                Log.e("Tele", "Failed to launch external player", e)
-                Toast.makeText(requireContext(), "No player found", Toast.LENGTH_LONG).show()
+                try {
+                    requireContext().startActivity(intent)
+                } catch (e: Exception) {
+                    Log.e("Tele", "Failed to launch external player", e)
+                    Toast.makeText(requireContext(), "No player found", Toast.LENGTH_LONG).show()
+                }
             }
         }
     }

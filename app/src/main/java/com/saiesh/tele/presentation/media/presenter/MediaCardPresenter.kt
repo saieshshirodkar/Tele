@@ -18,11 +18,12 @@ import com.bumptech.glide.load.DecodeFormat
 import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool
 import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
 import com.bumptech.glide.load.resource.bitmap.CenterCrop
+import com.bumptech.glide.signature.ObjectKey
 import java.io.File
 import java.security.MessageDigest
 import com.saiesh.tele.R
 import com.saiesh.tele.data.cache.ImageCache
-import com.saiesh.tele.data.repository.formatDuration
+import com.saiesh.tele.data.mapper.formatDuration
 import com.saiesh.tele.domain.model.MediaItem
 import com.saiesh.tele.domain.model.MediaType
 
@@ -86,7 +87,8 @@ class MediaCardPresenter(
                         .load(File(media.thumbnailPath!!))
                         .format(DecodeFormat.PREFER_ARGB_8888)
                         .transform(CenterCrop(), TopRoundedCorners(cornerPx))
-                        .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
+                        .signature(ObjectKey(media.messageId.toString()))
+                        .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.DATA)
                         .let { request ->
                             if (miniBitmap != null) {
                                 request.thumbnail(Glide.with(cardView).load(miniBitmap))

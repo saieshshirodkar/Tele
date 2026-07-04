@@ -21,3 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Tele"
 include(":app")
+include(":leanback-1.0.0")
+include(":sharedutils")

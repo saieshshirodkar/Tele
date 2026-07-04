@@ -37,12 +37,14 @@ data class MediaUiState(
     val nextFromMessageId: Long = 0L,
     val videoChats: List<VideoChatItem> = emptyList(),
     val isSidebarLoading: Boolean = false,
-    val sidebarError: String? = null
+    val sidebarError: String? = null,
+    val focusVersion: Int = 0
 )
 
 data class VideoChatItem(
     val chatId: Long,
     val title: String,
     val isSavedMessages: Boolean,
-    val isSelected: Boolean = false
-)
+    val isSelected: Boolean = false,
+    val order: Long = 0L
+) : Serializable
