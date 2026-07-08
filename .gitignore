@@ -7,7 +7,6 @@
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
-.idea/
 .DS_Store
 /build
 /app/build
@@ -65,3 +64,10 @@ release.keystore.b64
 # But include TDLib native library (required for app to work)
 !app/src/main/jniLibs/**/*.so
 **/build
+*.hprof
+*.orig
+*.swp
+*.swo
+*~
+Thumbs.db
+Desktop.ini
