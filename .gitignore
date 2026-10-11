@@ -34,6 +34,9 @@ release.keystore.b64
 **/keys.properties
 **/keystore.properties
 
+# Local agent/scratch notes
+AGENTS.md
+
 # Logs
 *.log
 

@@ -49,10 +49,16 @@ jobs:
         id: ks
         env:
           KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 -d > release.jks
-            echo "present=true" >> "$GITHUB_OUTPUT"
+            printf '%s' "$KEYSTORE_BASE64" | tr -d ' \n\r\t' | base64 -d > release.jks
+            if keytool -list -keystore release.jks -storepass "$RELEASE_STORE_PASSWORD" > /dev/null 2>&1; then
+              echo "present=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "keystore failed validation" >> "$GITHUB_STEP_SUMMARY"
+              echo "present=false" >> "$GITHUB_OUTPUT"
+            fi
           else
             echo "no keystore secret, apk will be unsigned" >> "$GITHUB_STEP_SUMMARY"
           fi
