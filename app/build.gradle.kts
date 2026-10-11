@@ -43,12 +43,15 @@ android {
         }
     }
 
+    val versionNameProp = (project.findProperty("VERSION_NAME") as String?)?.trim()
+    val versionCodeProp = (project.findProperty("VERSION_CODE") as String?)?.trim()
+
     defaultConfig {
         applicationId = "com.saiesh.tele"
         minSdk = 23
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.1"
+        versionCode = versionCodeProp?.toIntOrNull() ?: 101
+        versionName = versionNameProp ?: "1.0.1"
 
         ndk {
             abiFilters += listOf("armeabi-v7a", "arm64-v8a")

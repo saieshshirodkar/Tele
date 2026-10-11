@@ -1,0 +1,82 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: version name
+        required: true
+        default: 1.0.1
+      version_code:
+        description: version code
+        required: true
+        default: 101
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: resolve version
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            V="${GITHUB_REF_NAME#v}"
+            C=$(echo "$V" | awk -F. '{print $1*10000 + $2*100 + $3}')
+          else
+            V="${{ inputs.version }}"
+            C="${{ inputs.version_code }}"
+          fi
+          echo "name=$V" >> "$GITHUB_OUTPUT"
+          echo "code=$C" >> "$GITHUB_OUTPUT"
+          echo "building $V ($C)"
+
+      - name: keystore
+        id: ks
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > release.jks
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "no keystore secret, apk will be unsigned" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: build
+        env:
+          RELEASE_STORE_FILE: ${{ steps.ks.outputs.present == 'true' && 'release.jks' || '' }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          ./gradlew assembleRelease \
+            -PVERSION_NAME="${{ steps.ver.outputs.name }}" \
+            -PVERSION_CODE="${{ steps.ver.outputs.code }}"
+
+      - name: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tele-${{ steps.ver.outputs.name }}
+          path: app/build/outputs/apk/release/*.apk
+
+      - name: release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: app/build/outputs/apk/release/*.apk
+          generate_release_notes: true
