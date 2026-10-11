@@ -71,6 +71,7 @@ jobs:
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           ./gradlew assembleRelease \
+            -Dorg.gradle.java.home="$JAVA_HOME" \
             -PVERSION_NAME="${{ steps.ver.outputs.name }}" \
             -PVERSION_CODE="${{ steps.ver.outputs.code }}"
 
