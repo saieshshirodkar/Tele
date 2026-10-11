@@ -52,8 +52,8 @@ jobs:
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
-            printf '%s' "$KEYSTORE_BASE64" | tr -d ' \n\r\t' | base64 -d > release.jks
-            if keytool -list -keystore release.jks -storepass "$RELEASE_STORE_PASSWORD" > /dev/null 2>&1; then
+            printf '%s' "$KEYSTORE_BASE64" | tr -d ' \n\r\t' | base64 -d > "$GITHUB_WORKSPACE/release.jks"
+            if keytool -list -keystore "$GITHUB_WORKSPACE/release.jks" -storepass "$RELEASE_STORE_PASSWORD" > /dev/null 2>&1; then
               echo "present=true" >> "$GITHUB_OUTPUT"
             else
               echo "keystore failed validation" >> "$GITHUB_STEP_SUMMARY"
@@ -65,7 +65,7 @@ jobs:
 
       - name: build
         env:
-          RELEASE_STORE_FILE: ${{ steps.ks.outputs.present == 'true' && 'release.jks' || '' }}
+          RELEASE_STORE_FILE: ${{ steps.ks.outputs.present == 'true' && format('{0}/release.jks', github.workspace) || '' }}
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
