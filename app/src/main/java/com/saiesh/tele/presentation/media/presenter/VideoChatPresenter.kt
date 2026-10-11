@@ -14,29 +14,39 @@ import com.saiesh.tele.domain.model.VideoChatItem
 class VideoChatPresenter : Presenter() {
     override fun onCreateViewHolder(parent: ViewGroup): Presenter.ViewHolder {
         val context = parent.context
-        val marginPx = TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP, 6f, context.resources.displayMetrics
-        ).toInt()
-        val textView = TextView(context).apply {
-            isFocusable = true
-            isFocusableInTouchMode = true
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
-            setPadding(36, 26, 36, 26)
-            gravity = Gravity.CENTER_VERTICAL
-            layoutParams = ViewGroup.MarginLayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = marginPx
+        val marginPx =
+            TypedValue
+                .applyDimension(
+                    TypedValue.COMPLEX_UNIT_DIP,
+                    6f,
+                    context.resources.displayMetrics,
+                ).toInt()
+        val textView =
+            TextView(context).apply {
+                isFocusable = true
+                isFocusableInTouchMode = true
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
+                setPadding(36, 26, 36, 26)
+                gravity = Gravity.CENTER_VERTICAL
+                layoutParams =
+                    ViewGroup
+                        .MarginLayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ).apply {
+                            bottomMargin = marginPx
+                        }
+                setOnFocusChangeListener { _, hasFocus ->
+                    setTextColor(if (hasFocus) Color.BLACK else Color.WHITE)
+                }
             }
-            setOnFocusChangeListener { _, hasFocus ->
-                setTextColor(if (hasFocus) Color.BLACK else Color.WHITE)
-            }
-        }
         return ViewHolder(textView)
     }
 
-    override fun onBindViewHolder(viewHolder: Presenter.ViewHolder, item: Any?) {
+    override fun onBindViewHolder(
+        viewHolder: Presenter.ViewHolder,
+        item: Any?,
+    ) {
         val chat = item as? VideoChatItem ?: return
         val textView = viewHolder.view as TextView
         textView.text = chat.title

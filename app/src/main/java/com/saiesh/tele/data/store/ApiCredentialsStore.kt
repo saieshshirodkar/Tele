@@ -2,15 +2,21 @@ package com.saiesh.tele.data.store
 
 import android.content.Context
 
-class ApiCredentialsStore(context: Context) {
+class ApiCredentialsStore(
+    context: Context,
+) {
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     fun getApiId(): String? = prefs.getString(KEY_API_ID, null)
 
     fun getApiHash(): String? = prefs.getString(KEY_API_HASH, null)
 
-    fun save(apiId: String, apiHash: String) {
-        prefs.edit()
+    fun save(
+        apiId: String,
+        apiHash: String,
+    ) {
+        prefs
+            .edit()
             .putString(KEY_API_ID, apiId.trim())
             .putString(KEY_API_HASH, apiHash.trim())
             .apply()

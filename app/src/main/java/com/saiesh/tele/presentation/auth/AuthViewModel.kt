@@ -1,4 +1,4 @@
-package com.saiesh.tele.presentation.auth.vm
+package com.saiesh.tele.presentation.auth
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
@@ -10,7 +10,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class AuthViewModel(application: Application) : AndroidViewModel(application) {
+class AuthViewModel(
+    application: Application,
+) : AndroidViewModel(application) {
     private val authManager = TelegramAuthManager(application)
     private val _uiState = MutableStateFlow(AuthUiState(isLoading = true))
     val uiState: StateFlow<AuthUiState> = _uiState
@@ -27,7 +29,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                         code = state.code,
                         password = state.password,
                         message = state.message,
-                        isLoading = state.isLoading
+                        isLoading = state.isLoading,
                     )
                 }
             }
@@ -35,9 +37,13 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onPhoneChange(value: String) = updateField { it.copy(phone = value) }
+
     fun onApiIdChange(value: String) = updateField { it.copy(apiId = value) }
+
     fun onApiHashChange(value: String) = updateField { it.copy(apiHash = value) }
+
     fun onCodeChange(value: String) = updateField { it.copy(code = value) }
+
     fun onPasswordChange(value: String) = updateField { it.copy(password = value) }
 
     private fun updateField(transform: (AuthUiState) -> AuthUiState) {

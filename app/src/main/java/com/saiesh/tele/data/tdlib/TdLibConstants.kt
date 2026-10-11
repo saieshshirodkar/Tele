@@ -1,4 +1,4 @@
-package com.saiesh.tele.data.source.tdlib
+package com.saiesh.tele.data.tdlib
 
 internal const val BOT_USERNAME = "StreamVaultProBot"
 internal const val FAST_LINK_TIMEOUT_SECONDS = 30L

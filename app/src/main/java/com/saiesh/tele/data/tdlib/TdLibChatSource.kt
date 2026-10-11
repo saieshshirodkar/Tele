@@ -1,12 +1,12 @@
-package com.saiesh.tele.data.source.tdlib
+package com.saiesh.tele.data.tdlib
 
 import com.saiesh.tele.core.cache.TeleCache
-import com.saiesh.tele.core.tdlib.client.TdLibClient
+import com.saiesh.tele.core.tdlib.TdLibClient
 import org.drinkless.tdlib.Client
 import org.drinkless.tdlib.TdApi
 
 class TdLibChatSource(
-    private val client: Client = TdLibClient.client
+    private val client: Client = TdLibClient.client,
 ) {
     private var cachedMeId: Long? = null
     private var cachedSavedMessagesChatId: Long? = null
@@ -33,8 +33,14 @@ class TdLibChatSource(
                         TeleCache.saveSavedMessagesChatId(result.id)
                         onResult(result.id, null)
                     }
-                    is TdApi.Error -> onResult(null, result.message)
-                    else -> onResult(null, "Failed to open Saved Messages")
+
+                    is TdApi.Error -> {
+                        onResult(null, result.message)
+                    }
+
+                    else -> {
+                        onResult(null, "Failed to open Saved Messages")
+                    }
                 }
             }
         }
@@ -52,13 +58,22 @@ class TdLibChatSource(
                     TeleCache.saveMeId(result.id)
                     createChat(result.id)
                 }
-                is TdApi.Error -> onResult(null, result.message)
-                else -> onResult(null, "Failed to load user")
+
+                is TdApi.Error -> {
+                    onResult(null, result.message)
+                }
+
+                else -> {
+                    onResult(null, "Failed to load user")
+                }
             }
         }
     }
 
-    fun getChat(chatId: Long, onResult: (TdApi.Chat?, String?) -> Unit) {
+    fun getChat(
+        chatId: Long,
+        onResult: (TdApi.Chat?, String?) -> Unit,
+    ) {
         client.send(TdApi.GetChat(chatId)) { result ->
             when (result) {
                 is TdApi.Chat -> onResult(result, null)
@@ -70,7 +85,7 @@ class TdLibChatSource(
 
     fun getChatsInOrder(
         limit: Int,
-        onResult: (List<Long>, String?) -> Unit
+        onResult: (List<Long>, String?) -> Unit,
     ) {
         client.send(TdApi.GetChats(TdApi.ChatListMain(), limit)) { result ->
             when (result) {
@@ -85,25 +100,32 @@ class TdLibChatSource(
         chatList: TdApi.ChatList?,
         filter: TdApi.SearchMessagesFilter,
         limit: Int,
-        onResult: (List<TdApi.Message>, String?) -> Unit
+        onResult: (List<TdApi.Message>, String?) -> Unit,
     ) {
-        val query = TdApi.SearchMessages(
-            chatList ?: TdApi.ChatListMain(),
-            "",
-            "",
-            limit,
-            filter,
-            null,
-            0,
-            0
-        )
+        val query =
+            TdApi.SearchMessages(
+                chatList ?: TdApi.ChatListMain(),
+                "",
+                "",
+                limit,
+                filter,
+                null,
+                0,
+                0,
+            )
         client.send(query) { result ->
             when (result) {
                 is TdApi.FoundMessages -> {
                     onResult(result.messages?.toList().orEmpty(), null)
                 }
-                is TdApi.Error -> onResult(emptyList(), result.message)
-                else -> onResult(emptyList(), "Unexpected response")
+
+                is TdApi.Error -> {
+                    onResult(emptyList(), result.message)
+                }
+
+                else -> {
+                    onResult(emptyList(), "Unexpected response")
+                }
             }
         }
     }

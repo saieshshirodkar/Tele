@@ -1,4 +1,4 @@
-package com.saiesh.tele.presentation.media.ui
+package com.saiesh.tele.presentation.media.dialog
 
 import android.os.Bundle
 import android.view.Gravity
@@ -8,8 +8,9 @@ import androidx.fragment.app.DialogFragment
 import com.saiesh.tele.R
 import com.saiesh.tele.domain.model.MediaItem
 
-abstract class BaseMediaDialogFragment(layoutResId: Int) : DialogFragment(layoutResId) {
-
+abstract class BaseMediaDialogFragment(
+    layoutResId: Int,
+) : DialogFragment(layoutResId) {
     protected val mediaItem: MediaItem by lazy {
         BundleCompat.getSerializable(requireArguments(), ARG_ITEM, MediaItem::class.java)
             ?: error("Missing media item")

@@ -5,14 +5,14 @@ import com.saiesh.tele.domain.model.MediaType
 import org.drinkless.tdlib.TdApi
 
 object MediaMapper {
-
     fun mapMessage(message: TdApi.Message): MediaItem? {
         return when (val content = message.content) {
             is TdApi.MessageVideo -> {
                 val video = content.video
-                val title = content.caption?.text?.takeIf { it.isNotBlank() }
-                    ?: video?.fileName?.takeIf { it.isNotBlank() }
-                    ?: "Video"
+                val title =
+                    content.caption?.text?.takeIf { it.isNotBlank() }
+                        ?: video?.fileName?.takeIf { it.isNotBlank() }
+                        ?: "Video"
                 val file = video?.video
                 val thumb = video?.thumbnail
                 MediaItem(
@@ -27,9 +27,10 @@ object MediaMapper {
                     thumbnailWidth = thumb?.width ?: 0,
                     thumbnailHeight = thumb?.height ?: 0,
                     durationSeconds = video?.duration ?: 0,
-                    fileSizeBytes = file?.size ?: 0
+                    fileSizeBytes = file?.size ?: 0,
                 )
             }
+
             is TdApi.MessageVideoNote -> {
                 val videoNote = content.videoNote
                 val file = videoNote?.video
@@ -46,9 +47,10 @@ object MediaMapper {
                     thumbnailWidth = thumb?.width ?: 0,
                     thumbnailHeight = thumb?.height ?: 0,
                     durationSeconds = videoNote?.duration ?: 0,
-                    fileSizeBytes = file?.size ?: 0
+                    fileSizeBytes = file?.size ?: 0,
                 )
             }
+
             is TdApi.MessageDocument -> {
                 val document = content.document
                 if (!isVideoDocument(document)) return null
@@ -67,16 +69,18 @@ object MediaMapper {
                     thumbnailWidth = thumb?.width ?: 0,
                     thumbnailHeight = thumb?.height ?: 0,
                     durationSeconds = 0,
-                    fileSizeBytes = file?.size ?: 0
+                    fileSizeBytes = file?.size ?: 0,
                 )
             }
+
             is TdApi.MessageAnimation -> {
                 val animation = content.animation
                 val file = animation?.animation
                 val thumb = animation?.thumbnail
-                val title = content.caption?.text?.takeIf { it.isNotBlank() }
-                    ?: animation?.fileName?.takeIf { it.isNotBlank() }
-                    ?: "Animation"
+                val title =
+                    content.caption?.text?.takeIf { it.isNotBlank() }
+                        ?: animation?.fileName?.takeIf { it.isNotBlank() }
+                        ?: "Animation"
                 MediaItem(
                     chatId = message.chatId,
                     messageId = message.id,
@@ -89,9 +93,10 @@ object MediaMapper {
                     thumbnailWidth = thumb?.width ?: 0,
                     thumbnailHeight = thumb?.height ?: 0,
                     durationSeconds = animation?.duration ?: 0,
-                    fileSizeBytes = file?.size ?: 0
+                    fileSizeBytes = file?.size ?: 0,
                 )
             }
+
             is TdApi.MessagePhoto -> {
                 val photo = content.photo
                 val bestSize = photo.sizes?.maxByOrNull { it.width * it.height }
@@ -108,39 +113,65 @@ object MediaMapper {
                     thumbnailWidth = bestSize?.width ?: 0,
                     thumbnailHeight = bestSize?.height ?: 0,
                     durationSeconds = 0,
-                    fileSizeBytes = bestSize?.photo?.size?.toLong() ?: 0L
+                    fileSizeBytes = bestSize?.photo?.size?.toLong() ?: 0L,
                 )
             }
-            else -> null
+
+            else -> {
+                null
+            }
         }
     }
 
-    fun isMessageVideoType(message: TdApi.Message): Boolean {
-        return when (message.content) {
+    fun isMessageVideoType(message: TdApi.Message): Boolean =
+        when (message.content) {
             is TdApi.MessageVideo,
             is TdApi.MessageVideoNote,
-            is TdApi.MessageAnimation -> true
+            is TdApi.MessageAnimation,
+            -> true
+
             is TdApi.MessageDocument -> isVideoDocument((message.content as TdApi.MessageDocument).document)
+
             else -> false
         }
-    }
 
-    private val VIDEO_EXTENSIONS = setOf(
-        ".mkv", ".mp4", ".mov", ".webm", ".avi", ".m4v", ".mpeg", ".mpg",
-        ".wmv", ".flv", ".3gp", ".3g2", ".ts", ".m2ts", ".mxf", ".f4v",
-        ".vob", ".ogv", ".rm", ".rmvb"
-    )
+    private val VIDEO_EXTENSIONS =
+        setOf(
+            ".mkv",
+            ".mp4",
+            ".mov",
+            ".webm",
+            ".avi",
+            ".m4v",
+            ".mpeg",
+            ".mpg",
+            ".wmv",
+            ".flv",
+            ".3gp",
+            ".3g2",
+            ".ts",
+            ".m2ts",
+            ".mxf",
+            ".f4v",
+            ".vob",
+            ".ogv",
+            ".rm",
+            ".rmvb",
+        )
 
     private fun isVideoDocument(document: TdApi.Document?): Boolean {
-        val mime = document?.mimeType?.lowercase()?.trim().orEmpty()
-        val fileName = document?.fileName?.lowercase()?.trim().orEmpty()
+        val mime =
+            document
+                ?.mimeType
+                ?.lowercase()
+                ?.trim()
+                .orEmpty()
+        val fileName =
+            document
+                ?.fileName
+                ?.lowercase()
+                ?.trim()
+                .orEmpty()
         return mime.startsWith("video/") || VIDEO_EXTENSIONS.any { fileName.endsWith(it) }
     }
-}
-
-fun formatDuration(totalSeconds: Int): String {
-    val hours = totalSeconds / 3600
-    val minutes = (totalSeconds % 3600) / 60
-    val seconds = totalSeconds % 60
-    return String.format("%02dh%02dm%02ds", hours, minutes, seconds)
 }

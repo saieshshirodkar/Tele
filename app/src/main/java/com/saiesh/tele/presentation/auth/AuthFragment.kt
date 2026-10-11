@@ -1,4 +1,4 @@
-package com.saiesh.tele.presentation.auth.ui
+package com.saiesh.tele.presentation.auth
 
 import android.os.Bundle
 import android.view.View
@@ -14,13 +14,15 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.saiesh.tele.R
 import com.saiesh.tele.domain.model.AuthStep
-import com.saiesh.tele.presentation.auth.vm.AuthViewModel
 import kotlinx.coroutines.launch
 
 class AuthFragment : Fragment(R.layout.fragment_auth) {
     private val viewModel: AuthViewModel by viewModels()
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         val title = view.findViewById<TextView>(R.id.auth_title)
         val message = view.findViewById<TextView>(R.id.auth_message)
         val progress = view.findViewById<ProgressBar>(R.id.auth_progress)
@@ -50,11 +52,12 @@ class AuthFragment : Fragment(R.layout.fragment_auth) {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    title.text = if (state.step == AuthStep.EnterApiKeys) {
-                        getString(R.string.auth_api_title)
-                    } else {
-                        getString(R.string.auth_title)
-                    }
+                    title.text =
+                        if (state.step == AuthStep.EnterApiKeys) {
+                            getString(R.string.auth_api_title)
+                        } else {
+                            getString(R.string.auth_title)
+                        }
                     message.text = state.message.orEmpty()
                     message.visibility = if (state.message.isNullOrBlank()) View.GONE else View.VISIBLE
                     progress.visibility = if (state.isLoading) View.VISIBLE else View.GONE
@@ -64,11 +67,12 @@ class AuthFragment : Fragment(R.layout.fragment_auth) {
                     phoneInput.visibility = if (state.step == AuthStep.EnterPhone) View.VISIBLE else View.GONE
                     codeInput.visibility = if (state.step == AuthStep.EnterCode) View.VISIBLE else View.GONE
                     passwordInput.visibility = if (state.step == AuthStep.EnterPassword) View.VISIBLE else View.GONE
-                    submit.visibility = if (state.step == AuthStep.Authorized || state.step == AuthStep.Loading) {
-                        View.GONE
-                    } else {
-                        View.VISIBLE
-                    }
+                    submit.visibility =
+                        if (state.step == AuthStep.Authorized || state.step == AuthStep.Loading) {
+                            View.GONE
+                        } else {
+                            View.VISIBLE
+                        }
 
                     if (state.step == AuthStep.EnterApiKeys && apiIdInput.text.toString() != state.apiId) {
                         apiIdInput.setText(state.apiId)
@@ -86,13 +90,14 @@ class AuthFragment : Fragment(R.layout.fragment_auth) {
                         passwordInput.setText(state.password)
                     }
 
-                    submit.text = when (state.step) {
-                        AuthStep.EnterApiKeys -> getString(R.string.auth_submit_api)
-                        AuthStep.EnterPhone -> getString(R.string.auth_submit_phone)
-                        AuthStep.EnterCode -> getString(R.string.auth_submit_code)
-                        AuthStep.EnterPassword -> getString(R.string.auth_submit_password)
-                        else -> getString(R.string.auth_submit)
-                    }
+                    submit.text =
+                        when (state.step) {
+                            AuthStep.EnterApiKeys -> getString(R.string.auth_submit_api)
+                            AuthStep.EnterPhone -> getString(R.string.auth_submit_phone)
+                            AuthStep.EnterCode -> getString(R.string.auth_submit_code)
+                            AuthStep.EnterPassword -> getString(R.string.auth_submit_password)
+                            else -> getString(R.string.auth_submit)
+                        }
                 }
             }
         }

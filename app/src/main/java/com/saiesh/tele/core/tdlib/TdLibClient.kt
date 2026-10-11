@@ -1,4 +1,4 @@
-package com.saiesh.tele.core.tdlib.client
+package com.saiesh.tele.core.tdlib
 
 import android.util.Log
 import org.drinkless.tdlib.Client
@@ -9,7 +9,7 @@ object TdLibClient {
     private const val TAG = "TdLibClient"
 
     private class HandlerRegistry<T>(
-        private val name: String
+        private val name: String,
     ) {
         private val handlers = CopyOnWriteArrayList<(T) -> Unit>()
 
@@ -23,7 +23,9 @@ object TdLibClient {
 
         fun dispatch(value: T) {
             handlers.forEach { handler ->
-                try { handler(value) } catch (e: Exception) {
+                try {
+                    handler(value)
+                } catch (e: Exception) {
                     Log.e(TAG, "Error in $name handler", e)
                 }
             }
@@ -55,19 +57,23 @@ object TdLibClient {
                     Log.e(TAG, "Error dispatching error", e)
                 }
             },
-            null
+            null,
         )
     }
 
     fun addUpdateHandler(handler: (TdApi.Object?) -> Unit) = updateHandlers.add(handler)
+
     fun removeUpdateHandler(handler: (TdApi.Object?) -> Unit) = updateHandlers.remove(handler)
 
     fun addErrorHandler(handler: (Throwable?) -> Unit) = errorHandlers.add(handler)
+
     fun removeErrorHandler(handler: (Throwable?) -> Unit) = errorHandlers.remove(handler)
 
     fun addNewMessageHandler(handler: (TdApi.UpdateNewMessage) -> Unit) = newMessageHandlers.add(handler)
+
     fun removeNewMessageHandler(handler: (TdApi.UpdateNewMessage) -> Unit) = newMessageHandlers.remove(handler)
 
     fun addDeleteMessageHandler(handler: (TdApi.UpdateDeleteMessages) -> Unit) = deleteMessageHandlers.add(handler)
+
     fun removeDeleteMessageHandler(handler: (TdApi.UpdateDeleteMessages) -> Unit) = deleteMessageHandlers.remove(handler)
 }

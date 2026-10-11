@@ -1,11 +1,11 @@
-package com.saiesh.tele.presentation.media.vm
+package com.saiesh.tele.presentation.media
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.saiesh.tele.core.cache.TeleCache
-import com.saiesh.tele.core.tdlib.client.TdLibClient
-import com.saiesh.tele.data.repository.TeleRepositoryImpl
+import com.saiesh.tele.core.tdlib.TdLibClient
 import com.saiesh.tele.data.mapper.MediaMapper
+import com.saiesh.tele.data.repository.TeleRepositoryImpl
 import com.saiesh.tele.domain.model.MediaItem
 import com.saiesh.tele.domain.model.MediaUiState
 import com.saiesh.tele.domain.model.SAVED_MESSAGES_TITLE
@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 import org.drinkless.tdlib.TdApi
 
 class MediaViewModel(
-    private val repository: TeleRepository = TeleRepositoryImpl()
+    private val repository: TeleRepository = TeleRepositoryImpl(),
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MediaUiState())
     val uiState: StateFlow<MediaUiState> = _uiState
@@ -49,11 +49,14 @@ class MediaViewModel(
                 item?.let { newItem ->
                     _uiState.update { current ->
                         val exists = current.items.any { it.messageId == newItem.messageId }
-                        if (exists) current
-                        else current.copy(
-                            items = listOf(newItem) + current.items,
-                            focusVersion = current.focusVersion + 1
-                        )
+                        if (exists) {
+                            current
+                        } else {
+                            current.copy(
+                                items = listOf(newItem) + current.items,
+                                focusVersion = current.focusVersion + 1,
+                            )
+                        }
                     }
                     fetchThumbnails(listOf(item))
                 }
@@ -68,7 +71,7 @@ class MediaViewModel(
                 _uiState.update { current ->
                     current.copy(
                         items = current.items.filterNot { update.messageIds.contains(it.messageId) },
-                        focusVersion = current.focusVersion + 1
+                        focusVersion = current.focusVersion + 1,
                     )
                 }
             }
@@ -83,16 +86,18 @@ class MediaViewModel(
             is TdApi.UpdateNewChat,
             is TdApi.UpdateChatAddedToList,
             is TdApi.UpdateChatRemovedFromList,
-            is TdApi.UpdateChatPosition -> triggerSidebarRefresh()
+            is TdApi.UpdateChatPosition,
+            -> triggerSidebarRefresh()
         }
     }
 
     private fun triggerSidebarRefresh() {
         sidebarRefreshJob?.cancel()
-        sidebarRefreshJob = viewModelScope.launch {
-            delay(500)
-            loadVideoChats()
-        }
+        sidebarRefreshJob =
+            viewModelScope.launch {
+                delay(500)
+                loadVideoChats()
+            }
     }
 
     init {
@@ -116,7 +121,7 @@ class MediaViewModel(
             _uiState.update {
                 it.copy(
                     videoChats = cachedChats ?: it.videoChats,
-                    items = cachedItems ?: it.items
+                    items = cachedItems ?: it.items,
                 )
             }
         }
@@ -139,7 +144,7 @@ class MediaViewModel(
                 selectedChatId = null,
                 isSavedMessagesSelected = true,
                 hasMore = true,
-                nextFromMessageId = 0L
+                nextFromMessageId = 0L,
             )
         }
         repository.loadLatestMediaPaged(pageSize, null) { items, nextFromMessageId, error ->
@@ -149,7 +154,7 @@ class MediaViewModel(
                     isLoading = false,
                     error = error,
                     hasMore = nextFromMessageId != 0L,
-                    nextFromMessageId = nextFromMessageId
+                    nextFromMessageId = nextFromMessageId,
                 )
             }
             if (error == null) {
@@ -171,14 +176,17 @@ class MediaViewModel(
             it.copy(
                 isSavedMessagesSelected = true,
                 selectedChatId = null,
-                selectedChatTitle = SAVED_MESSAGES_TITLE
+                selectedChatTitle = SAVED_MESSAGES_TITLE,
             )
         }
         updateSidebarSelection()
         refresh()
     }
 
-    fun loadChat(chatId: Long, title: String) {
+    fun loadChat(
+        chatId: Long,
+        title: String,
+    ) {
         val chatKey = chatId.toString()
         val cachedItems = TeleCache.loadMediaItems(chatKey)
         if (cachedItems != null) {
@@ -194,7 +202,7 @@ class MediaViewModel(
                 selectedChatId = chatId,
                 isSavedMessagesSelected = false,
                 hasMore = true,
-                nextFromMessageId = 0L
+                nextFromMessageId = 0L,
             )
         }
         updateSidebarSelection()
@@ -205,7 +213,7 @@ class MediaViewModel(
                     isLoading = false,
                     error = error,
                     hasMore = nextFromMessageId != 0L,
-                    nextFromMessageId = nextFromMessageId
+                    nextFromMessageId = nextFromMessageId,
                 )
             }
             if (error == null) {
@@ -240,7 +248,11 @@ class MediaViewModel(
         }
     }
 
-    private fun handleLoadMore(items: List<MediaItem>, nextFromMessageId: Long, error: String?) {
+    private fun handleLoadMore(
+        items: List<MediaItem>,
+        nextFromMessageId: Long,
+        error: String?,
+    ) {
         _uiState.update { current ->
             val merged = (current.items + items).distinctBy { it.messageId }
             current.copy(
@@ -248,7 +260,7 @@ class MediaViewModel(
                 isLoadingMore = false,
                 error = error,
                 hasMore = nextFromMessageId != 0L,
-                nextFromMessageId = nextFromMessageId
+                nextFromMessageId = nextFromMessageId,
             )
         }
         if (items.isNotEmpty()) {
@@ -281,10 +293,11 @@ class MediaViewModel(
     private fun updateSidebarSelection() {
         val selectedId = if (_uiState.value.isSavedMessagesSelected) null else _uiState.value.selectedChatId
         _uiState.update { current ->
-            val updated = current.videoChats.map { chat ->
-                val isSelected = if (selectedId != null) chat.chatId == selectedId else chat.isSavedMessages
-                chat.copy(isSelected = isSelected)
-            }
+            val updated =
+                current.videoChats.map { chat ->
+                    val isSelected = if (selectedId != null) chat.chatId == selectedId else chat.isSavedMessages
+                    chat.copy(isSelected = isSelected)
+                }
             current.copy(videoChats = updated)
         }
     }
@@ -292,10 +305,11 @@ class MediaViewModel(
     private fun loadVideoChats() {
         val selectedId = if (_uiState.value.isSavedMessagesSelected) null else _uiState.value.selectedChatId
         _uiState.update { current ->
-            val updated = current.videoChats.map { chat ->
-                val isSelected = if (selectedId != null) chat.chatId == selectedId else chat.isSavedMessages
-                chat.copy(isSelected = isSelected)
-            }
+            val updated =
+                current.videoChats.map { chat ->
+                    val isSelected = if (selectedId != null) chat.chatId == selectedId else chat.isSavedMessages
+                    chat.copy(isSelected = isSelected)
+                }
             current.copy(videoChats = updated, isSidebarLoading = true, sidebarError = null)
         }
         repository.loadChatsWithVideos(15, selectedId) { chats, error ->
@@ -303,7 +317,7 @@ class MediaViewModel(
                 current.copy(
                     videoChats = chats,
                     isSidebarLoading = false,
-                    sidebarError = error
+                    sidebarError = error,
                 )
             }
             if (error == null) {
@@ -312,11 +326,17 @@ class MediaViewModel(
         }
     }
 
-    fun requestFastLink(item: MediaItem, onResult: (String?, String?) -> Unit) {
+    fun requestFastLink(
+        item: MediaItem,
+        onResult: (String?, String?) -> Unit,
+    ) {
         repository.requestFastLink(item, onResult)
     }
 
-    fun deleteMediaItem(item: MediaItem, onResult: (String?) -> Unit) {
+    fun deleteMediaItem(
+        item: MediaItem,
+        onResult: (String?) -> Unit,
+    ) {
         _uiState.update { it.copy(error = null) }
         repository.deleteMessage(item.chatId, item.messageId) { error ->
             if (error != null) {
@@ -342,12 +362,17 @@ class MediaViewModel(
         }
     }
 
-    private fun updateThumbnailPath(chatId: Long, messageId: Long, path: String) {
+    private fun updateThumbnailPath(
+        chatId: Long,
+        messageId: Long,
+        path: String,
+    ) {
         _uiState.update { current ->
             current.copy(
-                items = current.items.map { item ->
-                    if (item.chatId == chatId && item.messageId == messageId) item.copy(thumbnailPath = path) else item
-                }
+                items =
+                    current.items.map { item ->
+                        if (item.chatId == chatId && item.messageId == messageId) item.copy(thumbnailPath = path) else item
+                    },
             )
         }
     }

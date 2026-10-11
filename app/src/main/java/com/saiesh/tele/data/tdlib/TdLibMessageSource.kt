@@ -1,16 +1,20 @@
-package com.saiesh.tele.data.source.tdlib
+package com.saiesh.tele.data.tdlib
 
-import com.saiesh.tele.core.tdlib.client.TdLibClient
+import com.saiesh.tele.core.tdlib.TdLibClient
 import org.drinkless.tdlib.Client
 import org.drinkless.tdlib.TdApi
 import java.util.concurrent.ConcurrentHashMap
 
 class TdLibMessageSource(
-    private val client: Client = TdLibClient.client
+    private val client: Client = TdLibClient.client,
 ) {
     private val pendingFastLinks = ConcurrentHashMap<Long, Boolean>()
 
-    fun deleteMessages(chatId: Long, messageIds: LongArray, onResult: (String?) -> Unit) {
+    fun deleteMessages(
+        chatId: Long,
+        messageIds: LongArray,
+        onResult: (String?) -> Unit,
+    ) {
         client.send(TdApi.DeleteMessages(chatId, messageIds, true)) { result ->
             when (result) {
                 is TdApi.Ok -> onResult(null)
@@ -26,7 +30,7 @@ class TdLibMessageSource(
         messageId: Long,
         handlerScheduler: java.util.concurrent.ScheduledExecutorService,
         timeoutSeconds: Long,
-        onResult: (String?, String?) -> Unit
+        onResult: (String?, String?) -> Unit,
     ) {
         if (pendingFastLinks.putIfAbsent(messageId, true) != null) {
             onResult(null, "Already requesting link for this item")
@@ -42,9 +46,16 @@ class TdLibMessageSource(
                 return@send
             }
 
-            val forwardRequest = TdApi.ForwardMessages(
-                botChat.id, null, chatId, longArrayOf(messageId), null, true, true
-            )
+            val forwardRequest =
+                TdApi.ForwardMessages(
+                    botChat.id,
+                    null,
+                    chatId,
+                    longArrayOf(messageId),
+                    null,
+                    true,
+                    true,
+                )
             client.send(forwardRequest) { forwardResult ->
                 val forwarded = (forwardResult as? TdApi.Messages)?.messages?.firstOrNull()
                 if (forwarded == null) {
@@ -54,16 +65,19 @@ class TdLibMessageSource(
                     return@send
                 }
 
-                val completed = java.util.concurrent.atomic.AtomicBoolean(false)
+                val completed =
+                    java.util.concurrent.atomic
+                        .AtomicBoolean(false)
                 lateinit var updateHandler: (TdApi.Object?) -> Unit
 
-                val timeoutFuture = handlerScheduler.schedule({
-                    if (completed.compareAndSet(false, true)) {
-                        pendingFastLinks.remove(messageId)
-                        TdLibClient.removeUpdateHandler(updateHandler)
-                        onResult(null, "Bot did not respond in time")
-                    }
-                }, timeoutSeconds, java.util.concurrent.TimeUnit.SECONDS)
+                val timeoutFuture =
+                    handlerScheduler.schedule({
+                        if (completed.compareAndSet(false, true)) {
+                            pendingFastLinks.remove(messageId)
+                            TdLibClient.removeUpdateHandler(updateHandler)
+                            onResult(null, "Bot did not respond in time")
+                        }
+                    }, timeoutSeconds, java.util.concurrent.TimeUnit.SECONDS)
 
                 updateHandler = updateHandler@{ update ->
                     if (completed.get()) return@updateHandler
@@ -92,15 +106,27 @@ class TdLibMessageSource(
 
     private fun extractFastLink(text: String): String? {
         val regex = "https?://\\S+".toRegex()
-        val fastLine = text.lineSequence()
-            .firstOrNull { it.contains("Download Link:", ignoreCase = true) }
+        val fastLine =
+            text
+                .lineSequence()
+                .firstOrNull { it.contains("Download Link:", ignoreCase = true) }
         if (fastLine != null) {
-            regex.find(fastLine)?.value?.trimEnd('.', ',', ')', ']', '>')?.let { return it }
+            regex
+                .find(fastLine)
+                ?.value
+                ?.trimEnd('.', ',', ')', ']', '>')
+                ?.let { return it }
         }
-        val downloadLine = text.lineSequence()
-            .firstOrNull { it.contains("Download", ignoreCase = true) && it.contains("http") }
+        val downloadLine =
+            text
+                .lineSequence()
+                .firstOrNull { it.contains("Download", ignoreCase = true) && it.contains("http") }
         if (downloadLine != null) {
-            regex.find(downloadLine)?.value?.trimEnd('.', ',', ')', ']', '>')?.let { return it }
+            regex
+                .find(downloadLine)
+                ?.value
+                ?.trimEnd('.', ',', ')', ']', '>')
+                ?.let { return it }
         }
         return regex.find(text)?.value?.trimEnd('.', ',', ')', ']', '>')
     }

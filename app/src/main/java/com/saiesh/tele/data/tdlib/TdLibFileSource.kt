@@ -1,17 +1,20 @@
-package com.saiesh.tele.data.source.tdlib
+package com.saiesh.tele.data.tdlib
 
-import com.saiesh.tele.core.tdlib.client.TdLibClient
+import com.saiesh.tele.core.tdlib.TdLibClient
 import org.drinkless.tdlib.Client
 import org.drinkless.tdlib.TdApi
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 class TdLibFileSource(
-    private val client: Client = TdLibClient.client
+    private val client: Client = TdLibClient.client,
 ) {
     private val pendingDownloads = ConcurrentHashMap<Int, MutableList<(String?) -> Unit>>()
 
-    fun downloadThumbnail(fileId: Int, onResult: (String?) -> Unit) {
+    fun downloadThumbnail(
+        fileId: Int,
+        onResult: (String?) -> Unit,
+    ) {
         val callbacks = mutableListOf(onResult)
         val existing = pendingDownloads.putIfAbsent(fileId, callbacks)
         if (existing != null) {
@@ -27,11 +30,21 @@ class TdLibFileSource(
         }
 
         client.send(TdApi.GetFile(fileId)) { result ->
-            if (result is TdApi.Error) { dispatch(null); return@send }
-            val file = result as? TdApi.File ?: run { dispatch(null); return@send }
+            if (result is TdApi.Error) {
+                dispatch(null)
+                return@send
+            }
+            val file =
+                result as? TdApi.File ?: run {
+                    dispatch(null)
+                    return@send
+                }
             val local = file.local
             val existing = local?.path?.takeIf { it.isNotBlank() && local.isDownloadingCompleted }
-            if (existing != null) { dispatch(existing); return@send }
+            if (existing != null) {
+                dispatch(existing)
+                return@send
+            }
 
             val completed = AtomicBoolean(false)
             lateinit var updateHandler: (TdApi.Object?) -> Unit
@@ -46,7 +59,10 @@ class TdLibFileSource(
                 if (completed.get()) return@updateHandler
                 val updateFile = update as? TdApi.UpdateFile ?: return@updateHandler
                 if (updateFile.file.id != fileId) return@updateHandler
-                val path = updateFile.file.local?.path?.takeIf { it.isNotBlank() }
+                val path =
+                    updateFile.file.local
+                        ?.path
+                        ?.takeIf { it.isNotBlank() }
                 val isReady = updateFile.file.local?.isDownloadingCompleted == true
                 if (path != null && isReady && completed.compareAndSet(false, true)) {
                     cleanup(path)
@@ -63,6 +79,7 @@ class TdLibFileSource(
                             cleanup(path)
                         }
                     }
+
                     is TdApi.Error -> {
                         if (completed.compareAndSet(false, true)) {
                             cleanup(null)

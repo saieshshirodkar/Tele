@@ -11,20 +11,20 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.saiesh.tele.R
-import com.saiesh.tele.presentation.auth.ui.AuthFragment
 import com.saiesh.tele.domain.model.AuthStep
-import com.saiesh.tele.presentation.auth.vm.AuthViewModel
-import com.saiesh.tele.presentation.media.ui.BrowseFragment
+import com.saiesh.tele.presentation.auth.AuthFragment
+import com.saiesh.tele.presentation.auth.AuthViewModel
+import com.saiesh.tele.presentation.media.BrowseFragment
 import kotlinx.coroutines.launch
 
 class MainActivity : FragmentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setupExitHandler()
         if (savedInstanceState == null) {
-            supportFragmentManager.beginTransaction()
+            supportFragmentManager
+                .beginTransaction()
                 .replace(R.id.main_browse_fragment, BrowseFragment())
                 .commitNow()
         }
@@ -39,7 +39,8 @@ class MainActivity : FragmentActivity() {
                         }
                     } else if (state.step != AuthStep.Loading && current !is AuthFragment) {
                         supportFragmentManager.popBackStack()
-                        supportFragmentManager.beginTransaction()
+                        supportFragmentManager
+                            .beginTransaction()
                             .replace(R.id.main_browse_fragment, AuthFragment())
                             .commit()
                     }
@@ -51,7 +52,8 @@ class MainActivity : FragmentActivity() {
     fun showBrowse() {
         val current = supportFragmentManager.findFragmentById(R.id.main_browse_fragment)
         if (current !is BrowseFragment) {
-            supportFragmentManager.beginTransaction()
+            supportFragmentManager
+                .beginTransaction()
                 .replace(R.id.main_browse_fragment, BrowseFragment())
                 .commit()
         }
@@ -63,28 +65,30 @@ class MainActivity : FragmentActivity() {
         if (exitCallback != null) return
         var waitingForExit = false
         val handler = Handler(Looper.getMainLooper())
-        exitCallback = object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                val fragment = supportFragmentManager.findFragmentById(R.id.main_browse_fragment)
-                if (fragment is com.saiesh.tele.presentation.media.ui.BrowseFragment) {
-                    if (fragment.isShowingHeaders()) {
-                        if (waitingForExit) {
-                            finish()
+        exitCallback =
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    val fragment = supportFragmentManager.findFragmentById(R.id.main_browse_fragment)
+                    if (fragment is BrowseFragment) {
+                        if (fragment.isShowingHeaders()) {
+                            if (waitingForExit) {
+                                finish()
+                                return
+                            }
+                            waitingForExit = true
+                            Toast
+                                .makeText(this@MainActivity, "Press back again to exit", Toast.LENGTH_SHORT)
+                                .show()
+                            handler.removeCallbacksAndMessages(null)
+                            handler.postDelayed({ waitingForExit = false }, 2000)
                             return
                         }
-                        waitingForExit = true
-                        Toast.makeText(this@MainActivity, "Press back again to exit", Toast.LENGTH_SHORT)
-                            .show()
-                        handler.removeCallbacksAndMessages(null)
-                        handler.postDelayed({ waitingForExit = false }, 2000)
-                        return
                     }
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                    isEnabled = true
                 }
-                isEnabled = false
-                onBackPressedDispatcher.onBackPressed()
-                isEnabled = true
             }
-        }
         onBackPressedDispatcher.addCallback(this, exitCallback!!)
     }
 }

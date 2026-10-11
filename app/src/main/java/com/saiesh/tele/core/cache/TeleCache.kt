@@ -3,18 +3,19 @@ package com.saiesh.tele.core.cache
 import android.content.Context
 import com.saiesh.tele.domain.model.MediaItem
 import com.saiesh.tele.domain.model.VideoChatItem
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 
 object TeleCache {
     private var cacheDir: File? = null
 
     fun init(context: Context) {
         cacheDir = File(context.cacheDir, "tele_cache").also { it.mkdirs() }
-        cacheDir?.listFiles()
+        cacheDir
+            ?.listFiles()
             ?.filter { it.name.startsWith("media_") && System.currentTimeMillis() - it.lastModified() > 7 * 24 * 60 * 60 * 1000L }
             ?.forEach { it.delete() }
     }
@@ -36,7 +37,10 @@ object TeleCache {
         }
     }
 
-    fun saveMediaItems(items: List<MediaItem>, chatKey: String) {
+    fun saveMediaItems(
+        items: List<MediaItem>,
+        chatKey: String,
+    ) {
         val dir = cacheDir ?: return
         File(dir, "media_$chatKey.dat").writeBytes(serialize(items))
     }
@@ -53,16 +57,17 @@ object TeleCache {
         }
     }
 
-    fun saveChatTitle(chatId: Long, title: String) {
+    fun saveChatTitle(
+        chatId: Long,
+        title: String,
+    ) {
         val dir = cacheDir ?: return
         val titles = loadAllChatTitles().toMutableMap()
         titles[chatId] = title
         File(dir, "chat_titles.dat").writeBytes(serialize(titles))
     }
 
-    fun loadChatTitle(chatId: Long): String? {
-        return loadAllChatTitles()[chatId]
-    }
+    fun loadChatTitle(chatId: Long): String? = loadAllChatTitles()[chatId]
 
     @Suppress("UNCHECKED_CAST")
     private fun loadAllChatTitles(): Map<Long, String> {
@@ -76,16 +81,17 @@ object TeleCache {
         }
     }
 
-    fun saveChatOrder(chatId: Long, order: Long) {
+    fun saveChatOrder(
+        chatId: Long,
+        order: Long,
+    ) {
         val dir = cacheDir ?: return
         val orders = loadAllChatOrders().toMutableMap()
         orders[chatId] = order
         File(dir, "chat_orders.dat").writeBytes(serialize(orders))
     }
 
-    fun loadChatOrder(chatId: Long): Long? {
-        return loadAllChatOrders()[chatId]
-    }
+    fun loadChatOrder(chatId: Long): Long? = loadAllChatOrders()[chatId]
 
     @Suppress("UNCHECKED_CAST")
     private fun loadAllChatOrders(): Map<Long, Long> {

@@ -1,12 +1,12 @@
-package com.saiesh.tele.presentation.media.ui
+package com.saiesh.tele.presentation.media.dialog
 
 import android.os.Bundle
 import android.text.format.Formatter
 import android.view.View
 import android.widget.TextView
 import com.saiesh.tele.R
-import com.saiesh.tele.data.mapper.formatDuration
 import com.saiesh.tele.domain.model.MediaItem
+import com.saiesh.tele.domain.model.formatDuration
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -16,7 +16,10 @@ class MediaDetailsDialogFragment : BaseMediaDialogFragment(R.layout.dialog_media
         fun onDetailsDismiss()
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         view.findViewById<View>(R.id.details_overlay).setOnClickListener { dismissAndNotify() }
         view.findViewById<TextView>(R.id.details_title).text = mediaItem.title
         view.findViewById<TextView>(R.id.details_body).text = buildDetailsText()
@@ -28,22 +31,25 @@ class MediaDetailsDialogFragment : BaseMediaDialogFragment(R.layout.dialog_media
     }
 
     private fun buildDetailsText(): String {
-        val sizeLabel = if (mediaItem.fileSizeBytes > 0) {
-            Formatter.formatShortFileSize(requireContext(), mediaItem.fileSizeBytes)
-        } else {
-            "Unknown"
-        }
-        val durationLabel = if (mediaItem.durationSeconds > 0) {
-            formatDuration(mediaItem.durationSeconds)
-        } else {
-            "Unknown"
-        }
-        val dateLabel = if (mediaItem.date > 0) {
-            val date = Date(mediaItem.date * 1000L)
-            SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()).format(date)
-        } else {
-            "Unknown"
-        }
+        val sizeLabel =
+            if (mediaItem.fileSizeBytes > 0) {
+                Formatter.formatShortFileSize(requireContext(), mediaItem.fileSizeBytes)
+            } else {
+                "Unknown"
+            }
+        val durationLabel =
+            if (mediaItem.durationSeconds > 0) {
+                formatDuration(mediaItem.durationSeconds)
+            } else {
+                "Unknown"
+            }
+        val dateLabel =
+            if (mediaItem.date > 0) {
+                val date = Date(mediaItem.date * 1000L)
+                SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()).format(date)
+            } else {
+                "Unknown"
+            }
         return buildString {
             append("Type: ").append(mediaItem.type.name).append('\n')
             append("Duration: ").append(durationLabel).append('\n')
@@ -53,10 +59,9 @@ class MediaDetailsDialogFragment : BaseMediaDialogFragment(R.layout.dialog_media
     }
 
     companion object {
-        fun newInstance(item: MediaItem): MediaDetailsDialogFragment {
-            return MediaDetailsDialogFragment().apply {
+        fun newInstance(item: MediaItem): MediaDetailsDialogFragment =
+            MediaDetailsDialogFragment().apply {
                 arguments = Bundle().apply { putSerializable(ARG_ITEM, item) }
             }
-        }
     }
 }

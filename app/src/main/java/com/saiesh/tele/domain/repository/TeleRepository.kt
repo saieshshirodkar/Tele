@@ -9,42 +9,42 @@ interface TeleRepository {
     fun loadChatsWithVideos(
         limit: Int,
         selectedChatId: Long?,
-        onResult: (List<VideoChatItem>, String?) -> Unit
+        onResult: (List<VideoChatItem>, String?) -> Unit,
     )
 
     fun loadLatestMediaPaged(
         limit: Int,
         fromMessageId: Long?,
-        onResult: (List<MediaItem>, Long, String?) -> Unit
+        onResult: (List<MediaItem>, Long, String?) -> Unit,
     )
 
     fun loadChatMediaPaged(
         chatId: Long,
         limit: Int,
         fromMessageId: Long?,
-        onResult: (List<MediaItem>, Long, String?) -> Unit
+        onResult: (List<MediaItem>, Long, String?) -> Unit,
     )
 
     fun getMessage(
         chatId: Long,
         messageId: Long,
-        onResult: (MediaItem?, String?) -> Unit
+        onResult: (MediaItem?, String?) -> Unit,
     )
 
     fun deleteMessage(
         chatId: Long,
         messageId: Long,
-        onResult: (String?) -> Unit
+        onResult: (String?) -> Unit,
     )
 
     fun fetchThumbnailPath(
         fileId: Int,
-        onResult: (String?) -> Unit
+        onResult: (String?) -> Unit,
     )
 
     fun requestFastLink(
         item: MediaItem,
-        onResult: (String?, String?) -> Unit
+        onResult: (String?, String?) -> Unit,
     )
 
     fun shutdown()
