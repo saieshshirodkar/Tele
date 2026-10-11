@@ -51,7 +51,7 @@ android {
         versionName = "0.1"
 
         ndk {
-            abiFilters += listOf("armeabi-v7a")
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a")
         }
 
         val apiId = properties.getProperty("TELEGRAM_API_ID") ?: ""
