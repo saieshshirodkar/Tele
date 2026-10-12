@@ -1,26 +1,68 @@
 name: release
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: version name
-        required: true
-        default: 0.1
-      version_code:
-        description: version code
-        required: true
-        default: 3
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+    paths:
+      - app/build.gradle.kts
+  workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  build:
+  check-version:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      version_changed: ${{ steps.check.outputs.version_changed }}
+      new_version: ${{ steps.check.outputs.new_version }}
+      version_code: ${{ steps.check.outputs.version_code }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: check version
+        id: check
+        run: |
+          set -euo pipefail
+          FILE=app/build.gradle.kts
+
+          NEW_VERSION=$(grep -m1 -oP '^\s*versionName\s*=\s*"\K[^"]+' "$FILE" || true)
+          VERSION_CODE=$(grep -m1 -oP '^\s*versionCode\s*=\s*\K\d+' "$FILE" || true)
+
+          if [ -z "$NEW_VERSION" ] || [ -z "$VERSION_CODE" ]; then
+            echo "::error::could not parse versionName/versionCode from $FILE"
+            echo "version_changed=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+          echo "current: $NEW_VERSION ($VERSION_CODE)"
+
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            CHANGED=true
+          elif git show HEAD^:"$FILE" > /dev/null 2>&1; then
+            OLD=$(git show HEAD^:"$FILE" | grep -m1 -oP '^\s*versionName\s*=\s*"\K[^"]+' || true)
+            [ "$OLD" != "$NEW_VERSION" ] && CHANGED=true || CHANGED=false
+          else
+            CHANGED=true
+          fi
+
+          echo "version_changed=$CHANGED" >> "$GITHUB_OUTPUT"
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: check-version
+    if: needs.check-version.outputs.version_changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -31,59 +73,69 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: resolve version
-        id: ver
-        run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            V="${GITHUB_REF_NAME#v}"
-            C=$(echo "$V" | awk -F. '{print $1*10000 + $2*100 + $3}')
-          else
-            V="${{ inputs.version }}"
-            C="${{ inputs.version_code }}"
-          fi
-          echo "name=$V" >> "$GITHUB_OUTPUT"
-          echo "code=$C" >> "$GITHUB_OUTPUT"
-          echo "building $V ($C)"
-
       - name: keystore
         id: ks
         env:
           KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
         run: |
-          if [ -n "$KEYSTORE_BASE64" ]; then
-            printf '%s' "$KEYSTORE_BASE64" | tr -d ' \n\r\t' | base64 -d > "$GITHUB_WORKSPACE/release.jks"
-            if keytool -list -keystore "$GITHUB_WORKSPACE/release.jks" -storepass "$RELEASE_STORE_PASSWORD" > /dev/null 2>&1; then
-              echo "present=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "keystore failed validation" >> "$GITHUB_STEP_SUMMARY"
-              echo "present=false" >> "$GITHUB_OUTPUT"
-            fi
-          else
-            echo "no keystore secret, apk will be unsigned" >> "$GITHUB_STEP_SUMMARY"
+          set -euo pipefail
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::RELEASE_KEYSTORE_BASE64 not set"
+            exit 1
           fi
+          printf '%s' "$KEYSTORE_BASE64" | tr -d ' \n\r\t' | base64 -d > "$GITHUB_WORKSPACE/release.jks"
+          keytool -list -keystore "$GITHUB_WORKSPACE/release.jks" -storepass "$RELEASE_STORE_PASSWORD" > /dev/null 2>&1 || {
+            echo "::error::keystore failed to open, check RELEASE_STORE_PASSWORD"
+            exit 1
+          }
+          echo "present=true" >> "$GITHUB_OUTPUT"
 
       - name: build
         env:
-          RELEASE_STORE_FILE: ${{ steps.ks.outputs.present == 'true' && format('{0}/release.jks', github.workspace) || '' }}
+          RELEASE_STORE_FILE: ${{ format('{0}/release.jks', github.workspace) }}
           RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: |
-          ./gradlew assembleRelease \
-            -Dorg.gradle.java.home="$JAVA_HOME" \
-            -PVERSION_NAME="${{ steps.ver.outputs.name }}" \
-            -PVERSION_CODE="${{ steps.ver.outputs.code }}"
+        run: ./gradlew assembleRelease -Dorg.gradle.java.home="$JAVA_HOME"
 
-      - name: upload
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: Tele-${{ steps.ver.outputs.name }}
+          name: Tele-${{ needs.check-version.outputs.new_version }}
           path: app/build/outputs/apk/release/*.apk
 
-      - name: release
-        if: github.event_name == 'push'
-        uses: softprops/action-gh-release@v2
+  release:
+    needs: [check-version, build]
+    if: needs.check-version.outputs.version_changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
         with:
-          files: app/build/outputs/apk/release/*.apk
-          generate_release_notes: true
+          name: Tele-${{ needs.check-version.outputs.new_version }}
+          path: out
+
+      - name: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.check-version.outputs.new_version }}
+        run: |
+          set -euo pipefail
+          APK=$(find out -name '*.apk' | head -1)
+          if [ -z "$APK" ]; then
+            echo "::error::no apk in artifacts"
+            exit 1
+          fi
+          NOTES=$(git log --pretty=format:"- %s" --no-merges -10 || echo "- release")
+          {
+            echo "Released by @${{ github.triggering_actor }}"
+            echo
+            printf '%s\n' "$NOTES"
+          } > notes.md
+          gh release create "v$VERSION" \
+            --title "$VERSION" \
+            --notes-file notes.md \
+            --latest \
+            "$APK"
