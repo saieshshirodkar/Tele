@@ -2,6 +2,8 @@
 
 Tele is an Android TV app that lets you browse and play videos, photos, and other media from your Telegram chats right on your TV. It works with your Telegram Saved Messages and any other chats you have.
 
+> **Active development.** Work is in progress and new builds aren't tested on real hardware yet. **[v0.1](https://github.com/saieshshirodkar/Tele/releases/tag/v0.1) is the last known-stable release — use that.** No 1.x builds are published.
+
 ## What you need
 
 - An Android TV device (or Android TV box)

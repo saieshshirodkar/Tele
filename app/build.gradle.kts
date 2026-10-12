@@ -50,8 +50,8 @@ android {
         applicationId = "com.saiesh.tele"
         minSdk = 23
         targetSdk = 36
-        versionCode = versionCodeProp?.toIntOrNull() ?: 101
-        versionName = versionNameProp ?: "1.0.1"
+        versionCode = versionCodeProp?.toIntOrNull() ?: 3
+        versionName = versionNameProp ?: "0.1"
 
         ndk {
             abiFilters += listOf("armeabi-v7a", "arm64-v8a")

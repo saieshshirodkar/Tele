@@ -6,11 +6,11 @@ on:
       version:
         description: version name
         required: true
-        default: 1.0.1
+        default: 0.1
       version_code:
         description: version code
         required: true
-        default: 101
+        default: 3
   push:
     tags:
       - 'v*'
